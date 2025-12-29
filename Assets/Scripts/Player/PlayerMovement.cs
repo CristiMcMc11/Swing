@@ -23,7 +23,8 @@ public class PlayerMovement : MonoBehaviour
     [Header("Runtime")]
     public PlayerStates playerState  = PlayerStates.Grounded;
     [SerializeField] private Vector2 velocity;
-    [SerializeField] private float speed;
+    [SerializeField] private Vector2 postGrappleVelocity;
+    [SerializeField] private float moveSpeed;
 
     [Header("Ground")]
     [SerializeField] private float walkSpeed = 10;
@@ -35,11 +36,16 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
     public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
 
+    [Header("Extra Velocity")]
+    [SerializeField] private float PGVxDecayFactor = 0.5f;
+    [SerializeField] private float PGVyDecayFactor = 7f;
+
     [Header("Grapple Swing")]
     [SerializeField] private Vector2 directionToGrapplePoint;
     [SerializeField] private float grappleDistance;
     [SerializeField] private Vector2 grapplePoint;
 
+    [SerializeField] private Vector2 directionFromPrevPoint;
     [SerializeField] private float grappleSpeed;
     [SerializeField] private float originalAngleSpeed;
     [SerializeField] private float speedEquationFactor;
@@ -75,14 +81,15 @@ public class PlayerMovement : MonoBehaviour
         {
             case PlayerStates.Grounded:
                 //Get horizontal input to move but don't use gravity
-                velocity.x = speed;
+                velocity.x = moveSpeed;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
             case PlayerStates.InAir:
                 //Use gravity and horizontal input
                 ApplyGravity();
-                velocity.x = speed;
+                velocity.x = moveSpeed;
+                velocity += CalculateAdditionalVelocity();
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -94,8 +101,14 @@ public class PlayerMovement : MonoBehaviour
 
             case PlayerStates.GrappleSwinging:
                 //Special grapple stuff
+                Vector2 prevPoint = rb.position;
+
                 float currentPlayerAngle = FindCurrentPlayerAngleRad(grapplePoint, grappleDistance);
-                rb.MovePosition(GrappleSwingMovement(grappleDistance, grapplePoint, CalculateAngleSpeed(currentPlayerAngle)));
+                Vector2 newPosition = GrappleSwingMovement(grappleDistance, grapplePoint, CalculateAngleSpeed(currentPlayerAngle));
+                rb.MovePosition(newPosition);
+
+                directionFromPrevPoint = (newPosition - prevPoint).normalized;
+                print(directionFromPrevPoint);
                 break;
         }
     }
@@ -125,7 +138,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector2 moveInput = context.ReadValue<Vector2>();
         directionToGrapplePoint = moveInput.normalized;
-        speed = walkSpeed * moveInput.x;
+        moveSpeed = walkSpeed * moveInput.x;
     }
 
     public void OnJump(InputAction.CallbackContext context)
@@ -141,10 +154,10 @@ public class PlayerMovement : MonoBehaviour
             velocity.y = velocity.y < 0 ? velocity.y : velocity.y / 4; //unchanged if velocity.y is negative, and divided by 4 if velocity.y is positive
         }
 
-        //if (value == 1 && playerState == PlayerStates.GrappleSwinging)
-        //{
-        //    JumpOutOfGrapple();
-        //}
+        if (value == 1 && playerState == PlayerStates.GrappleSwinging)
+        {
+            JumpOutOfGrapple();
+        }
     }
 
     #endregion
@@ -156,6 +169,24 @@ public class PlayerMovement : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
 
         //velocity.y = Mathf.Max(velocity.y, gravity / 2f);
+    }
+
+    private Vector2 CalculateAdditionalVelocity()
+    {
+        Vector2 totalAdditionalVelocity = Vector2.zero;
+
+        if (postGrappleVelocity.magnitude > 0)
+        {
+            totalAdditionalVelocity += postGrappleVelocity;
+
+            postGrappleVelocity.y /= PGVyDecayFactor;
+            postGrappleVelocity.y = postGrappleVelocity.y < 0.01f ? 0 : postGrappleVelocity.y;
+
+            postGrappleVelocity.x = Mathf.Max(postGrappleVelocity.x - PGVxDecayFactor, 0);
+
+            //postGrappleVelocity = new Vector2(Mathf.Max(postGrappleVelocity.x, 0), Mathf.Max(postGrappleVelocity.y, 0));
+        }
+        return totalAdditionalVelocity;
     }
 
     #endregion
@@ -179,7 +210,6 @@ public class PlayerMovement : MonoBehaviour
         bool grappleHit = true;
 
         grapplePoint = FindGrapplePoint(ref grappleHit);
-        print(grapplePoint);
         float tempDistance = Vector2.Distance(rb.position, grapplePoint);
         float time = CalculateGrappleThrowTime(tempDistance, grappleHit);
 
@@ -275,6 +305,13 @@ public class PlayerMovement : MonoBehaviour
         return angleSpeedRad;
     }
 
+    private Vector2 AngleSpeedToVelocity(float angleSpeed, float radius, Vector2 directionFromPrevPoint)
+    {
+        //Find the distance of an arc with the radius and the angle
+        float magnitude = angleSpeed * radius;
+        return directionFromPrevPoint * magnitude;
+    }
+
     /// <summary>
     /// Finds the current angle in radians of the player on a grapple.
     /// </summary>
@@ -315,5 +352,13 @@ public class PlayerMovement : MonoBehaviour
         grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
         return grappleSpeed; 
     }
+
+    private void JumpOutOfGrapple()
+    {
+        playerState = PlayerStates.InAir;
+        postGrappleVelocity = AngleSpeedToVelocity(grappleSpeed, grappleDistance, directionFromPrevPoint);
+        velocity = Vector2.zero;
+    }
+
     #endregion
 }
