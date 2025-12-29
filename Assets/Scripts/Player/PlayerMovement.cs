@@ -8,12 +8,12 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour
 {
     #region Variables
-    private enum PlayerStates
+    public enum PlayerStates
     {
         Grounded,
         InAir,
         GrappleThrow,
-        Grappling,
+        GrappleSwinging,
         OnWall
     }
 
@@ -21,7 +21,7 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody2D rb;
 
     [Header("Runtime")]
-    [SerializeField] private PlayerStates playerState = PlayerStates.Grounded;
+    public PlayerStates playerState  = PlayerStates.Grounded;
     [SerializeField] private Vector2 velocity;
     [SerializeField] private float speed;
 
@@ -35,16 +35,20 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
     public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
 
-    [Header("Grapple")]
-    [SerializeField] private Vector2 direction;
+    [Header("Grapple Swing")]
+    [SerializeField] private Vector2 directionToGrapplePoint;
     [SerializeField] private float grappleDistance;
     [SerializeField] private Vector2 grapplePoint;
 
+    [SerializeField] private float grappleSpeed;
     [SerializeField] private float originalAngleSpeed;
     [SerializeField] private float speedEquationFactor;
+    [SerializeField] private bool movingRight = true;
 
     [SerializeField] private float maxGrappleDistance = 20;
     [SerializeField] private float maxGrappleThrowTime = 0.5f;
+    [SerializeField] private float grappleTurnThreshold = 0.02f;
+    [SerializeField] private float dampeningFactor = 0.1f;
     #endregion
 
     private void Awake()
@@ -88,10 +92,10 @@ public class PlayerMovement : MonoBehaviour
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
-            case PlayerStates.Grappling:
+            case PlayerStates.GrappleSwinging:
                 //Special grapple stuff
                 float currentPlayerAngle = FindCurrentPlayerAngleRad(grapplePoint, grappleDistance);
-                rb.MovePosition(GrappleSwingMovement(grappleDistance, grapplePoint, CalculateAngleSpeed(speedEquationFactor, currentPlayerAngle, grappleDistance)));
+                rb.MovePosition(GrappleSwingMovement(grappleDistance, grapplePoint, CalculateAngleSpeed(currentPlayerAngle)));
                 break;
         }
     }
@@ -120,7 +124,7 @@ public class PlayerMovement : MonoBehaviour
     public void OnMove(InputAction.CallbackContext context)
     {
         Vector2 moveInput = context.ReadValue<Vector2>();
-        direction = moveInput.normalized;
+        directionToGrapplePoint = moveInput.normalized;
         speed = walkSpeed * moveInput.x;
     }
 
@@ -136,6 +140,11 @@ public class PlayerMovement : MonoBehaviour
         {
             velocity.y = velocity.y < 0 ? velocity.y : velocity.y / 4; //unchanged if velocity.y is negative, and divided by 4 if velocity.y is positive
         }
+
+        //if (value == 1 && playerState == PlayerStates.GrappleSwinging)
+        //{
+        //    JumpOutOfGrapple();
+        //}
     }
 
     #endregion
@@ -181,9 +190,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (grappleHit)
         {
-            originalAngleSpeed = VelocityToAngleSpeed(velocity, grappleDistance, grapplePoint);
-            speedEquationFactor = FindSpeedEquationFactor(originalAngleSpeed, FindCurrentPlayerAngleRad(grapplePoint, grappleDistance));
-            playerState = PlayerStates.Grappling;
+            StartGrappleSwinging();
         }
         else
         {
@@ -192,13 +199,19 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void StartGrappleSwinging()
+    {
+        grappleSpeed = VelocityToAngleSpeed(velocity, grappleDistance);
+        playerState = PlayerStates.GrappleSwinging;
+    }
+
     private Vector2 FindGrapplePoint(ref bool grappleHit)
     {
         int layerMask = LayerMask.GetMask("Terrain");
 
-        if (rb.Raycast(direction, maxGrappleDistance, layerMask))
+        if (rb.Raycast(directionToGrapplePoint, maxGrappleDistance, layerMask))
         {
-            return rb.RaycastReturnPoint(direction, maxGrappleDistance, layerMask);
+            return rb.RaycastReturnPoint(directionToGrapplePoint, maxGrappleDistance, layerMask);
         }
         else
         {
@@ -235,6 +248,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 GrappleSwingMovement(float distance, Vector2 grapplePoint, float angleToMove)
     {
         angleToMove *= Time.fixedDeltaTime;
+
         Vector2 prevPoint = rb.position;
         float radius = Vector2.Distance(grapplePoint, prevPoint);
 
@@ -251,7 +265,7 @@ public class PlayerMovement : MonoBehaviour
         return new Vector2(x, y);
     }
 
-    private float VelocityToAngleSpeed(Vector2 playerVelocity, float radius, Vector2 center)
+    private float VelocityToAngleSpeed(Vector2 playerVelocity, float radius)
     {
         //1. Find the downward velocity of the player, or zero if the player is moving up
         float yVelocity = playerVelocity.y; //We know that the player must move this distance on the circle
@@ -286,32 +300,20 @@ public class PlayerMovement : MonoBehaviour
     }
 
     /// <summary>
-    /// Finds the factor y in the equation -sin(x) + y, which is used to calculate speed over time for grappling
-    /// </summary>
-    /// <param name="originalAngleSpeed"></param>
-    /// <param name="currentPlayerAngleRad"></param>
-    /// <returns> A float y</returns>
-    private float FindSpeedEquationFactor(float originalAngleSpeed, float currentPlayerAngleRad)
-    {
-        //PARENT FUNCTION: -sin(x) + 1
-        //1. Find the value of the angle on the parent function
-        float compare = -Mathf.Sin(currentPlayerAngleRad) + 1;
-
-        //2. Divide the original speed by the comparison speed
-        return originalAngleSpeed / compare;
-    }
-
-    /// <summary>
-    /// Calculates the angle speed for one frame of grapple movement. This uses the equation: -0.5(radius)sin(x) + speedEquationFactor
+    /// Calculates the angle speed for one frame of grapple movement. This is done by adding gravity as an anglespeed to the grappleSpeed.
     /// </summary>
     /// <param name="speedEquationFactor"></param>
     /// <param name="currentPlayerAngleRad"></param>
     /// <param name="radius"></param>
     /// <returns> A float, the angleSpeed.</returns>
-    private float CalculateAngleSpeed(float speedEquationFactor, float currentPlayerAngleRad, float radius)
+    private float CalculateAngleSpeed(float currentPlayerAngleRad)
     {
-        return radius * 0.5f * -Mathf.Sin(currentPlayerAngleRad) + speedEquationFactor;
-    }
+        bool isOnTheRight = currentPlayerAngleRad * Mathf.Rad2Deg >= 270 || currentPlayerAngleRad * Mathf.Rad2Deg <= 90;
+        float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -gravity), grappleDistance);
 
+        //If the player is on the right, add gravityAngleSpeed. If the player is on the right, subtract gravityAngleSpeed
+        grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
+        return grappleSpeed; 
+    }
     #endregion
 }
