@@ -489,6 +489,7 @@ GameObject:
   - component: {fileID: 1152884641}
   - component: {fileID: 1152884640}
   - component: {fileID: 1152884642}
+  - component: {fileID: 1152884646}
   - component: {fileID: 1152884644}
   - component: {fileID: 1152884643}
   - component: {fileID: 1152884645}
@@ -598,18 +599,6 @@ MonoBehaviour:
   maxJumpTime: 1
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
-  directionToGrapplePoint: {x: 0, y: 0}
-  grappleDistance: 0
-  grapplePoint: {x: 0, y: 0}
-  directionFromPrevPoint: {x: 0, y: 0}
-  grappleSpeed: 0
-  originalAngleSpeed: 0
-  speedEquationFactor: 0
-  movingRight: 1
-  maxGrappleDistance: 100
-  maxGrappleThrowTime: 0.5
-  grappleTurnThreshold: 0.6
-  dampeningFactor: 1
 --- !u!50 &1152884643
 Rigidbody2D:
   serializedVersion: 5
@@ -747,11 +736,49 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 7891b760-c72f-43aa-bb63-09f0a0322011
     m_ActionName: 'Movement/Grapple[/Keyboard/f]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1152884646}
+        m_TargetAssemblyTypeName: GrapplerMovement, Assembly-CSharp
+        m_MethodName: SetGrappleDirectionalInput
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 431d22d0-11fc-49ab-b033-02448966a08d
+    m_ActionName: 'Movement/Grapple Directional Input[/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Movement
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &1152884646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1152884637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b451c04f12ee4d46a9cb9b4a33809ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovement
+  grappleDirectionalInput: {x: 0, y: 0}
+  grappleDistance: 0
+  grapplePoint: {x: 0, y: 0}
+  directionFromPrevPoint: {x: 0, y: 0}
+  grappleSpeed: 0
+  originalAngleSpeed: 0
+  speedEquationFactor: 0
+  movingRight: 1
+  maxGrappleDistance: 20
+  maxGrappleThrowTime: 0.1
 --- !u!1 &1209245805
 GameObject:
   m_ObjectHideFlags: 0
