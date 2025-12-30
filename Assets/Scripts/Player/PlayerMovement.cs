@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Drawing;
 using Unity.VisualScripting;
@@ -29,6 +30,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 postGrappleVelocity;
     [SerializeField] private float moveSpeed;
 
+    [Header("Raycasting")]
+    [SerializeField] private float groundBoxCastLength = 0.75f;
+    [SerializeField] private float groundBoxCastYOffset = 1;
+    [SerializeField] private float groundRaycastDistance = 1f;
+    [SerializeField] private LayerMask groundRaycastLayerMask;
+
     [Header("Ground")]
     [SerializeField] private float walkSpeed = 10;
     [SerializeField] private bool facingRight = true;
@@ -43,20 +50,6 @@ public class PlayerMovement : MonoBehaviour
     public Vector2 grapplerDirectionFromPrevPoint { get; private set; }
     [SerializeField] private float PGVxDecayFactor = 0.5f;
     [SerializeField] private float PGVyDecayFactor = 7f;
-
-    //[Header("Grapple Swing")]
-    //[SerializeField] private Vector2 directionToGrapplePoint;
-    //[SerializeField] private float grappleDistance;
-    //[SerializeField] private Vector2 grapplePoint;
-    //[SerializeField] private float grappleSpeed;
-    //[SerializeField] private float originalAngleSpeed;
-    //[SerializeField] private float speedEquationFactor;
-    //[SerializeField] private bool movingRight = true;
-
-    //[SerializeField] private float maxGrappleDistance = 20;
-    //[SerializeField] private float maxGrappleThrowTime = 0.5f;
-    //[SerializeField] private float grappleTurnThreshold = 0.02f;
-    //[SerializeField] private float dampeningFactor = 0.1f;
     #endregion
 
     private void Awake()
@@ -67,11 +60,12 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-
+        
     }
 
     private void FixedUpdate()
     {
+        CheckForGrounded();
         additionalVelocity = CalculateAdditionalVelocity();
         ApplyMovement();
     }
@@ -118,20 +112,61 @@ public class PlayerMovement : MonoBehaviour
                 grapplerDirectionFromPrevPoint = (newPosition - prevPoint).normalized;
                 break;
         }
+        CheckForGrounded();
     }
 
     #region Player States
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void CheckForGrounded()
     {
-        playerState = PlayerStates.Grounded;
-        velocity.y = 0;
+        Vector2 groundBoxCastPos = new Vector2(rb.position.x, rb.position.y - groundBoxCastYOffset);
+
+        RaycastHit2D hitGround = rb.BoxCast(groundBoxCastPos, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 20, groundRaycastLayerMask);
+
+        RaycastHit2D hitCenter = rb.Raycast(rb.position, Vector2.down, groundRaycastDistance + 0.1f, groundRaycastLayerMask);
+
+        //print(((hitLeft || hitRight), playerState == PlayerStates.InAir, velocity.y <= 0));
+
+        if (hitGround && playerState == PlayerStates.InAir && velocity.y < 0)
+        {
+            playerState = PlayerStates.Grounded;
+            velocity.y = 0;
+            OffsetGroundPlayerPosition(hitCenter);
+        }
+        else if (hitCenter && playerState == PlayerStates.InAir && velocity.y < 0)
+        {
+            OffsetGroundPlayerPosition(hitCenter);
+        }
+        else if (!hitGround && playerState == PlayerStates.Grounded)
+        {
+            playerState = PlayerStates.InAir;
+        }
     }
 
-    private void OnCollisionExit2D(Collision2D collision)
+    private void OffsetGroundPlayerPosition(RaycastHit2D hit)
     {
-        playerState = PlayerStates.InAir;
+        float hitYCoord = 0;
+
+        if (hit)
+        {
+            hitYCoord = hit.point.y;
+        }
+
+        float yOffset = groundRaycastDistance - (rb.position.y - hitYCoord);
+        Vector3 newPosition = new Vector3(rb.position.x, rb.position.y + yOffset);
+        transform.position = newPosition;
     }
+
+    //private void OnCollisionEnter2D(Collision2D collision)
+    //{
+    //    playerState = PlayerStates.Grounded;
+    //    velocity.y = 0;
+    //}
+
+    //private void OnCollisionExit2D(Collision2D collision)
+    //{
+    //    playerState = PlayerStates.InAir;
+    //}
 
     #endregion
 
@@ -154,7 +189,8 @@ public class PlayerMovement : MonoBehaviour
 
         if (value == 1 && playerState == PlayerStates.Grounded) //holding/pressed jump
         {
-            velocity.y += value * jumpForce / 2;
+            playerState = PlayerStates.InAir;
+            velocity.y += value * jumpForce;
         }
         else if (value == 0 && playerState == PlayerStates.InAir) //let go of jump
         {
@@ -224,181 +260,6 @@ public class PlayerMovement : MonoBehaviour
         print(postGrappleVelocity);
         velocity = Vector2.zero;
     }
-
-    //public void Grapple(InputAction.CallbackContext context)
-    //{
-    //    bool keyPressed = context.ReadValue<float>() == 1;
-
-    //    if (keyPressed && playerState == PlayerStates.InAir)
-    //    {
-    //        playerState = PlayerStates.GrappleThrow;
-    //        StartCoroutine(GrappleThrowCoroutine());
-    //    }
-    //}
-
-    //private IEnumerator GrappleThrowCoroutine()
-    //{
-    //    int layerMask = LayerMask.GetMask("Terrain");
-    //    bool grappleHit = true;
-
-    //    grapplePoint = FindGrapplePoint(ref grappleHit);
-    //    float tempDistance = Vector2.Distance(rb.position, grapplePoint);
-    //    float time = CalculateGrappleThrowTime(tempDistance, grappleHit);
-
-    //    //animation for throwing grapple
-    //    yield return new WaitForSeconds(time);
-
-    //    grappleDistance = Vector2.Distance(rb.position, grapplePoint);
-
-    //    if (grappleHit)
-    //    {
-    //        StartGrappleSwinging();
-    //    }
-    //    else
-    //    {
-    //        yield return new WaitForSeconds(time/2);
-    //        playerState = PlayerStates.InAir;
-    //    }
-    //}
-
-    //private void StartGrappleSwinging()
-    //{
-    //    grappleSpeed = VelocityToAngleSpeed(velocity, grappleDistance);
-    //    //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
-    //    playerState = PlayerStates.GrappleSwinging;
-    //}
-
-    //private Vector2 FindGrapplePoint(ref bool grappleHit)
-    //{
-    //    int layerMask = LayerMask.GetMask("Terrain");
-
-    //    if (rb.Raycast(directionToGrapplePoint, maxGrappleDistance, layerMask))
-    //    {
-    //        return rb.RaycastReturnPoint(directionToGrapplePoint, maxGrappleDistance, layerMask);
-    //    }
-    //    else
-    //    {
-    //        grappleHit = false;
-    //        return Vector2.zero;
-    //    }
-    //}
-
-    //private float CalculateGrappleThrowTime(float distance, bool grappleHit)
-    //{
-    //    if (grappleHit)
-    //    {
-    //        return (distance / maxGrappleDistance) * maxGrappleThrowTime;
-    //    }
-    //    return maxGrappleThrowTime;
-    //}
-
-    //private void TweenVelocityToZero(float time)
-    //{
-    //    LeanTween.value(gameObject, velocity, Vector2.zero, time / 2)
-    //        .setOnUpdate((Vector2 val) =>
-    //        {
-    //            velocity = val;
-    //        });
-    //}
-
-    ///// <summary>
-    ///// Calculates the point the player should move to next while grapple swinging.
-    ///// </summary>
-    ///// <param name="distance"></param>
-    ///// <param name="grapplePoint"></param>
-    ///// <param name="angleToMove"></param>
-    ///// <returns> The point the player should move to next </returns>
-    //private Vector2 GrappleSwingMovement(float distance, Vector2 grapplePoint, float angleToMove)
-    //{
-    //    angleToMove *= Time.fixedDeltaTime;
-
-    //    Vector2 prevPoint = rb.position;
-    //    float radius = Vector2.Distance(grapplePoint, prevPoint);
-
-    //    // 1. Get current angle in radians
-    //    float currentAngle = Mathf.Atan2(prevPoint.y - grapplePoint.y, prevPoint.x - grapplePoint.x);
-
-    //    // 2. Add move angle
-    //    float newAngle = currentAngle + angleToMove;
-
-    //    // 3. Calculate new point
-    //    float x = grapplePoint.x + radius * Mathf.Cos(newAngle);
-    //    float y = grapplePoint.y + radius * Mathf.Sin(newAngle);
-
-    //    return new Vector2(x, y);
-    //}
-
-    //private float VelocityToAngleSpeed(Vector2 playerVelocity, float radius)
-    //{
-    //    //1. Find the downward velocity of the player, or zero if the player is moving up
-    //    float yVelocity = playerVelocity.y; //We know that the player must move this distance on the circle
-    //    yVelocity = playerVelocity.x >= 0 ? yVelocity : -yVelocity;
-
-    //    //2. Find the angle in radians needed to move the player that distance on the circle
-    //    float angleSpeedRad = -(yVelocity / radius);
-    //    return angleSpeedRad;
-    //}
-
-    //private Vector2 AngleSpeedToVelocity(float angleSpeed, float radius, Vector2 directionFromPrevPoint)
-    //{
-    //    //Find the distance of an arc with the radius and the angle
-    //    float magnitude = angleSpeed * radius;
-
-    //    Vector2 velocity = directionFromPrevPoint * magnitude;
-    //    velocity.y = angleSpeed < 0 ? -velocity.y : velocity.y; 
-    //    velocity.x = directionFromPrevPoint.x < 0 ? -velocity.x : velocity.x;
-
-    //    return velocity;
-    //}
-
-    ///// <summary>
-    ///// Finds the current angle in radians of the player on a grapple.
-    ///// </summary>
-    ///// <param name="center"></param>
-    ///// <param name="radius"></param>
-    ///// <returns> An angle in radians from 0 to 2pi. </returns>
-    //private float FindCurrentPlayerAngleRad(Vector2 center, float radius)
-    //{
-    //    // 1. Get the direction vector from center to point
-    //    Vector2 direction = rb.position - center;
-
-    //    // 2. Calculate angle in radians 
-    //    // Returns a value between -PI and PI (-3.14 to 3.14)
-    //    float angleRadians = Mathf.Atan2(direction.y, direction.x);
-
-    //    // 3.Normalize to 0 to 2*PI range
-    //    if (angleRadians < 0)
-    //    {
-    //        angleRadians += 2 * Mathf.PI;
-    //    }
-
-    //    return angleRadians;
-    //}
-
-    ///// <summary>
-    ///// Calculates the angle speed for one frame of grapple movement. This is done by adding gravity as an anglespeed to the grappleSpeed.
-    ///// </summary>
-    ///// <param name="speedEquationFactor"></param>
-    ///// <param name="currentPlayerAngleRad"></param>
-    ///// <param name="radius"></param>
-    ///// <returns> A float, the angleSpeed.</returns>
-    //private float CalculateAngleSpeed(float currentPlayerAngleRad)
-    //{
-    //    bool isOnTheRight = currentPlayerAngleRad * Mathf.Rad2Deg >= 270 || currentPlayerAngleRad * Mathf.Rad2Deg <= 90;
-    //    float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -gravity), grappleDistance);
-
-    //    //If the player is on the right, add gravityAngleSpeed. If the player is on the right, subtract gravityAngleSpeed
-    //    grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
-    //    return grappleSpeed; 
-    //}
-
-    //private void JumpOutOfGrapple()
-    //{
-    //    playerState = PlayerStates.InAir;
-    //    postGrappleVelocity = AngleSpeedToVelocity(grappleSpeed, grappleDistance, directionFromPrevPoint);
-    //    print(postGrappleVelocity);
-    //    velocity = Vector2.zero;
-    //}
 
     #endregion
 }
