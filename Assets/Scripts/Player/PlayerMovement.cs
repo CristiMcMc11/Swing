@@ -3,6 +3,7 @@ using System.Drawing;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -23,6 +24,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Runtime")]
     public PlayerStates playerState  = PlayerStates.Grounded;
     [SerializeField] private Vector2 velocity;
+    [SerializeField] private Vector2 additionalVelocity;
     [SerializeField] private Vector2 postGrappleVelocity;
     [SerializeField] private float moveSpeed;
 
@@ -69,6 +71,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        additionalVelocity = CalculateAdditionalVelocity();
         ApplyMovement();
     }
 
@@ -89,7 +92,7 @@ public class PlayerMovement : MonoBehaviour
                 //Use gravity and horizontal input
                 ApplyGravity();
                 velocity.x = moveSpeed;
-                velocity += CalculateAdditionalVelocity();
+                velocity += additionalVelocity;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -108,7 +111,6 @@ public class PlayerMovement : MonoBehaviour
                 rb.MovePosition(newPosition);
 
                 directionFromPrevPoint = (newPosition - prevPoint).normalized;
-                print(directionFromPrevPoint);
                 break;
         }
     }
@@ -173,6 +175,12 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector2 CalculateAdditionalVelocity()
     {
+        if (playerState != PlayerStates.InAir)
+        {
+            postGrappleVelocity = Vector2.zero;
+            return Vector2.zero;
+        }
+
         Vector2 totalAdditionalVelocity = Vector2.zero;
 
         if (postGrappleVelocity.magnitude > 0)
@@ -182,7 +190,7 @@ public class PlayerMovement : MonoBehaviour
             postGrappleVelocity.y /= PGVyDecayFactor;
             postGrappleVelocity.y = postGrappleVelocity.y < 0.01f ? 0 : postGrappleVelocity.y;
 
-            postGrappleVelocity.x = Mathf.Max(postGrappleVelocity.x - PGVxDecayFactor, 0);
+            postGrappleVelocity.x = postGrappleVelocity.x < 0 ? Mathf.Min(postGrappleVelocity.x + PGVxDecayFactor, 0) : Mathf.Max(postGrappleVelocity.x - PGVxDecayFactor, 0);
 
             //postGrappleVelocity = new Vector2(Mathf.Max(postGrappleVelocity.x, 0), Mathf.Max(postGrappleVelocity.y, 0));
         }
@@ -232,6 +240,7 @@ public class PlayerMovement : MonoBehaviour
     private void StartGrappleSwinging()
     {
         grappleSpeed = VelocityToAngleSpeed(velocity, grappleDistance);
+        //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
         playerState = PlayerStates.GrappleSwinging;
     }
 
@@ -299,6 +308,7 @@ public class PlayerMovement : MonoBehaviour
     {
         //1. Find the downward velocity of the player, or zero if the player is moving up
         float yVelocity = playerVelocity.y; //We know that the player must move this distance on the circle
+        yVelocity = playerVelocity.x >= 0 ? yVelocity : -yVelocity;
 
         //2. Find the angle in radians needed to move the player that distance on the circle
         float angleSpeedRad = -(yVelocity / radius);
@@ -309,7 +319,12 @@ public class PlayerMovement : MonoBehaviour
     {
         //Find the distance of an arc with the radius and the angle
         float magnitude = angleSpeed * radius;
-        return directionFromPrevPoint * magnitude;
+
+        Vector2 velocity = directionFromPrevPoint * magnitude;
+        velocity.y = angleSpeed < 0 ? -velocity.y : velocity.y; 
+        velocity.x = directionFromPrevPoint.x < 0 ? -velocity.x : velocity.x;
+
+        return velocity;
     }
 
     /// <summary>
@@ -357,6 +372,7 @@ public class PlayerMovement : MonoBehaviour
     {
         playerState = PlayerStates.InAir;
         postGrappleVelocity = AngleSpeedToVelocity(grappleSpeed, grappleDistance, directionFromPrevPoint);
+        print(postGrappleVelocity);
         velocity = Vector2.zero;
     }
 
