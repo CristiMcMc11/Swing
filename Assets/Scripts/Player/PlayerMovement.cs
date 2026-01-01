@@ -84,8 +84,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        CheckForGrounded();
         CheckForWallTouch();
+        CheckForGrounded();
         DecayAdditionalVelocity();
         ApplyMovement();
     }
@@ -162,7 +162,7 @@ public class PlayerMovement : MonoBehaviour
 
         //print(((hitLeft || hitRight), playerState == PlayerStates.InAir, velocity.y <= 0));
 
-        if (hitGround && playerState == PlayerStates.InAir && velocity.y < 0)
+        if (hitGround && velocity.y < 0)
         {
             playerState = PlayerStates.Grounded;
             velocity.y = 0;
@@ -201,9 +201,20 @@ public class PlayerMovement : MonoBehaviour
         {
             onRightWall = hitRight ? true : false;
 
-            playerState = PlayerStates.OnWall;
-            TweenWallSlideSpeed();
-            OffsetWallPlayerPosition(hitLeft ? hitLeft : hitRight, hitLeft ? false : true);
+            if ((onRightWall && playerDirectionalInput.x > 0) || (!onRightWall && playerDirectionalInput.x < 0))
+            {
+                playerState = PlayerStates.OnWall;
+                TweenWallSlideSpeed();
+                OffsetWallPlayerPosition(hitLeft ? hitLeft : hitRight, hitLeft ? false : true);
+            }
+            else
+            {
+                playerState = PlayerStates.InAir;
+            }
+        }
+        else if (playerState == PlayerStates.OnWall && ((onRightWall && playerDirectionalInput.x < 0) || (!onRightWall && playerDirectionalInput.x > 0))) //checking whether input doesn't match the wall direction
+        {
+            playerState = PlayerStates.InAir;
         }
         else if (!(hitLeft || hitRight) && playerState == PlayerStates.OnWall)
         {
