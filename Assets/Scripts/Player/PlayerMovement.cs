@@ -346,13 +346,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnWallJumpInput()
     {
-        if (playerDirectionalInput.y == 0)
-        {
-            StartCoroutine(WallJump());
-        }
-        else if (playerDirectionalInput.y > 0)
+        if (playerDirectionalInput.y > 0)
         {
             StartCoroutine(WallClimb());
+            
+        }
+        else
+        {
+            StartCoroutine(WallJump());
         }
     }
 
