@@ -16,7 +16,8 @@ public class PlayerMovement : MonoBehaviour
         InAir,
         GrappleThrow,
         GrappleSwinging,
-        OnWall
+        OnWall,
+        WallClimbing
     }
 
     //References
@@ -27,7 +28,8 @@ public class PlayerMovement : MonoBehaviour
     public PlayerStates playerState  = PlayerStates.Grounded;
     [SerializeField] private Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
-    [SerializeField] private Vector2 postGrappleVelocity;
+    [SerializeField] private Vector2 playerDirectionalInput = Vector2.zero;
+
     [SerializeField] private float moveSpeed;
 
     [Header("Raycasting")]
@@ -35,6 +37,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float groundBoxCastYOffset = 1;
     [SerializeField] private float groundRaycastDistance = 1f;
     [SerializeField] private LayerMask groundRaycastLayerMask;
+
+    [SerializeField] private float wallBoxCastOffset = 0.5f;
+    [SerializeField] private float wallBoxCastSize = 2f;
 
     [Header("Ground")]
     [SerializeField] private float walkSpeed = 10;
@@ -46,6 +51,19 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
     public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
 
+    [Header("Wall")]
+    [SerializeField] private bool onRightWall;
+    [SerializeField] private float wallVelocity = 0f;
+    [SerializeField] private bool canGoOnWall = true;
+    [SerializeField] private bool isWallClimbing = true;
+
+    [SerializeField] private float minSlideSpeed = 0.2f;
+    [SerializeField] private float maxSlideSpeed = 1f;
+    [SerializeField] private float slideSpeedTweenTime = 0.4f;
+    [SerializeField] private float climbHeight = 15;
+    [SerializeField] private float climbTime = 0.1f;
+    [SerializeField] private Vector2 wallJumpVelocity = new Vector2(10, 10);
+
     [Header("Extra Velocity")]
     public Vector2 grapplerDirectionFromPrevPoint { get; private set; }
     [SerializeField] private float PGVxDecayFactor = 0.5f;
@@ -56,6 +74,7 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         grapplerMovementScript = GetComponent<GrapplerMovement>();
+        //Time.timeScale = 0.5f;
     }
 
     private void Update()
@@ -66,7 +85,8 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         CheckForGrounded();
-        additionalVelocity = CalculateAdditionalVelocity();
+        CheckForWallTouch();
+        DecayAdditionalVelocity();
         ApplyMovement();
     }
 
@@ -91,8 +111,8 @@ public class PlayerMovement : MonoBehaviour
             case PlayerStates.InAir:
                 //Use gravity and horizontal input
                 ApplyGravity();
-                velocity.x = moveSpeed;
-                velocity += additionalVelocity;
+                ApplyAdditionalVelocity();
+
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -111,19 +131,34 @@ public class PlayerMovement : MonoBehaviour
 
                 grapplerDirectionFromPrevPoint = (newPosition - prevPoint).normalized;
                 break;
+
+            case PlayerStates.OnWall:
+                velocity.x = 0;
+                velocity.y = wallVelocity;
+                rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                break;
+
+            case PlayerStates.WallClimbing:
+                velocity.y = climbHeight / climbTime;
+                rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                break;
+
         }
+
+        CheckForWallTouch();
         CheckForGrounded();
     }
 
     #region Player States
 
+    //GROUNDED
     private void CheckForGrounded()
     {
-        Vector2 groundBoxCastPos = new Vector2(rb.position.x, rb.position.y - groundBoxCastYOffset);
+        Vector2 offset = new Vector2(0, -groundBoxCastYOffset);
 
-        RaycastHit2D hitGround = rb.BoxCast(groundBoxCastPos, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 20, groundRaycastLayerMask);
+        RaycastHit2D hitGround = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, groundRaycastLayerMask);
 
-        RaycastHit2D hitCenter = rb.Raycast(rb.position, Vector2.down, groundRaycastDistance + 0.1f, groundRaycastLayerMask);
+        RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + 0.1f, groundRaycastLayerMask);
 
         //print(((hitLeft || hitRight), playerState == PlayerStates.InAir, velocity.y <= 0));
 
@@ -145,32 +180,48 @@ public class PlayerMovement : MonoBehaviour
 
     private void OffsetGroundPlayerPosition(RaycastHit2D hit)
     {
-        float hitYCoord = 0;
-
-        if (hit)
-        {
-            hitYCoord = hit.point.y;
-        }
+        float hitYCoord = hit.point.y;
 
         float yOffset = groundRaycastDistance - (rb.position.y - hitYCoord);
         Vector3 newPosition = new Vector3(rb.position.x, rb.position.y + yOffset);
         transform.position = newPosition;
     }
 
-    //private void OnCollisionEnter2D(Collision2D collision)
-    //{
-    //    playerState = PlayerStates.Grounded;
-    //    velocity.y = 0;
-    //}
+    //WALL
+    private void CheckForWallTouch()
+    {
+        Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
+        Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
+        Vector2 size = new Vector2(0.1f, wallBoxCastSize);
 
-    //private void OnCollisionExit2D(Collision2D collision)
-    //{
-    //    playerState = PlayerStates.InAir;
-    //}
+        RaycastHit2D hitLeft = rb.BoxCast(leftOffset, size, 0, Vector2.zero, 1, groundRaycastLayerMask);
+        RaycastHit2D hitRight = rb.BoxCast(rightOffset, size, 0, Vector2.zero, 1, groundRaycastLayerMask);
+
+        if ((hitLeft || hitRight) && playerState == PlayerStates.InAir && canGoOnWall)
+        {
+            onRightWall = hitRight ? true : false;
+
+            playerState = PlayerStates.OnWall;
+            TweenWallSlideSpeed();
+            OffsetWallPlayerPosition(hitLeft ? hitLeft : hitRight, hitLeft ? false : true);
+        }
+        else if (!(hitLeft || hitRight) && playerState == PlayerStates.OnWall)
+        {
+            playerState = PlayerStates.InAir;
+        }
+    }
+
+    private void OffsetWallPlayerPosition(RaycastHit2D hit, bool onTheRight)
+    {
+        float xCoordinate = hit.point.x;
+        float playerXPos = onTheRight ? xCoordinate - wallBoxCastOffset : xCoordinate + wallBoxCastOffset;
+        Vector3 newPosition = new Vector3(playerXPos, rb.position.y);
+        transform.position = newPosition;
+    }
 
     #endregion
 
-    #region Ground
+    #region Recieving Input
 
     /// <summary>
     /// Catches the horizontal movement input from the player
@@ -186,21 +237,41 @@ public class PlayerMovement : MonoBehaviour
     public void OnJump(InputAction.CallbackContext context)
     {
         float value = context.ReadValue<float>();
+        bool keyPressed = value == 1;
 
-        if (value == 1 && playerState == PlayerStates.Grounded) //holding/pressed jump
+        if (keyPressed && playerState == PlayerStates.Grounded) //holding/pressed jump
         {
             playerState = PlayerStates.InAir;
             velocity.y += value * jumpForce;
         }
-        else if (value == 0 && playerState == PlayerStates.InAir) //let go of jump
+        else if (!keyPressed && playerState == PlayerStates.InAir) //let go of jump
         {
             velocity.y = velocity.y < 0 ? velocity.y : velocity.y / 4; //unchanged if velocity.y is negative, and divided by 4 if velocity.y is positive
         }
-
-        if (value == 1 && playerState == PlayerStates.GrappleSwinging)
+        else if (keyPressed && playerState == PlayerStates.GrappleSwinging)
         {
             JumpOutOfGrapple();
         }
+        else if (keyPressed && playerState == PlayerStates.OnWall)
+        {
+            OnWallJumpInput();
+        }
+    }
+
+    public void Grapple(InputAction.CallbackContext context)
+    {
+        bool keyPressed = context.ReadValue<float>() == 1;
+
+        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall))
+        {
+            playerState = PlayerStates.GrappleThrow;
+            StartCoroutine(grapplerMovementScript.GrappleThrowCoroutine());
+        }
+    }
+
+    public void DirectionalInput(InputAction.CallbackContext context)
+    {
+        playerDirectionalInput = context.ReadValue<Vector2>();
     }
 
     #endregion
@@ -214,51 +285,122 @@ public class PlayerMovement : MonoBehaviour
         //velocity.y = Mathf.Max(velocity.y, gravity / 2f);
     }
 
-    private Vector2 CalculateAdditionalVelocity()
+    private void ApplyAdditionalVelocity()
+    {
+        velocity.y += additionalVelocity.y;
+
+        if (additionalVelocity.x == 0)
+        {
+            velocity.x = moveSpeed;
+        }
+
+        if (playerDirectionalInput.x == 0)
+        {
+            velocity.x = additionalVelocity.x;
+            return;
+        }
+
+        bool inputOpposingVelocity = (playerDirectionalInput.x < 0 && additionalVelocity.x > 0) || (playerDirectionalInput.x > 0 && additionalVelocity.x < 0);
+        if (inputOpposingVelocity)
+        {
+            velocity.x = moveSpeed;
+        }
+        else
+        {
+            if (playerDirectionalInput.x > 0)
+            {
+                velocity.x = Mathf.Max(moveSpeed, additionalVelocity.x);
+            }
+            else if (playerDirectionalInput.x < 0)
+            {
+                velocity.x = Mathf.Min(moveSpeed, additionalVelocity.x);
+            }
+        }
+    }
+
+    private void DecayAdditionalVelocity()
     {
         if (playerState != PlayerStates.InAir)
         {
-            postGrappleVelocity = Vector2.zero;
-            return Vector2.zero;
+            additionalVelocity = Vector2.zero;
         }
 
-        Vector2 totalAdditionalVelocity = Vector2.zero;
-
-        if (postGrappleVelocity.magnitude > 0)
+        if (additionalVelocity.magnitude > 0)
         {
-            totalAdditionalVelocity += postGrappleVelocity;
+            additionalVelocity.y /= PGVyDecayFactor;
+            additionalVelocity.y = additionalVelocity.y < 0.01f ? 0 : additionalVelocity.y;
 
-            postGrappleVelocity.y /= PGVyDecayFactor;
-            postGrappleVelocity.y = postGrappleVelocity.y < 0.01f ? 0 : postGrappleVelocity.y;
-
-            postGrappleVelocity.x = postGrappleVelocity.x < 0 ? Mathf.Min(postGrappleVelocity.x + PGVxDecayFactor, 0) : Mathf.Max(postGrappleVelocity.x - PGVxDecayFactor, 0);
+            additionalVelocity.x = additionalVelocity.x < 0 ? Mathf.Min(additionalVelocity.x + PGVxDecayFactor, 0) : Mathf.Max(additionalVelocity.x - PGVxDecayFactor, 0);
+            if ((playerDirectionalInput.x < 0 && additionalVelocity.x > 0) || (playerDirectionalInput.x > 0 && additionalVelocity.x < 0))
+            {
+                additionalVelocity.x = 0;
+            }
 
             //postGrappleVelocity = new Vector2(Mathf.Max(postGrappleVelocity.x, 0), Mathf.Max(postGrappleVelocity.y, 0));
         }
-        return totalAdditionalVelocity;
+    }
+
+    #endregion
+
+    #region On Wall
+
+    private void OnWallJumpInput()
+    {
+        if (playerDirectionalInput.y == 0)
+        {
+            StartCoroutine(WallJump());
+        }
+        else if (playerDirectionalInput.y > 0)
+        {
+            StartCoroutine(WallClimb());
+        }
+    }
+
+    private IEnumerator WallClimb()
+    {
+        LeanTween.cancel(gameObject);
+        playerState = PlayerStates.WallClimbing;
+        yield return new WaitForSeconds(climbTime);
+        playerState = PlayerStates.OnWall;
+        TweenWallSlideSpeed();
+        
+    }
+
+    private IEnumerator WallJump()
+    {
+        playerState = PlayerStates.InAir;
+        additionalVelocity = wallJumpVelocity;
+        additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
+
+        canGoOnWall = false;
+        yield return new WaitForSeconds(0.1f);
+        canGoOnWall = true;
+    }
+
+    private void TweenWallSlideSpeed()
+    {
+        if (LeanTween.isTweening())
+        {
+            LeanTween.cancel(gameObject);
+        }
+
+        LeanTween.value(-minSlideSpeed, -maxSlideSpeed, slideSpeedTweenTime)
+            .setOnUpdate((float value) =>
+            {
+                wallVelocity = value;
+            });
     }
 
     #endregion
 
     #region Grappler
 
-    public void Grapple(InputAction.CallbackContext context)
-    {
-        bool keyPressed = context.ReadValue<float>() == 1;
-
-        if (keyPressed && playerState == PlayerStates.InAir)
-        {
-            playerState = PlayerStates.GrappleThrow;
-            StartCoroutine(grapplerMovementScript.GrappleThrowCoroutine());
-        }
-    }
-
     public void JumpOutOfGrapple()
     {
         playerState = PlayerStates.InAir;
-        postGrappleVelocity = grapplerMovementScript.SetPostGrappleVelocity();
-        print(postGrappleVelocity);
-        velocity = Vector2.zero;
+        additionalVelocity = grapplerMovementScript.SetPostGrappleVelocity();
+        print(additionalVelocity);
+        velocity = additionalVelocity;
     }
 
     #endregion

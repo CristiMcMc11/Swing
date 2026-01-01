@@ -71,7 +71,7 @@ public class GrapplerMovement : MonoBehaviour
     private Vector2 FindGrapplePoint(ref bool grappleHit)
     {
         int layerMask = LayerMask.GetMask("Terrain");
-        RaycastHit2D hit = rb.Raycast(rb.position, grappleDirectionalInput, maxGrappleDistance, layerMask);
+        RaycastHit2D hit = rb.Raycast(Vector2.zero, grappleDirectionalInput, maxGrappleDistance, layerMask);
 
         if (hit)
         {

@@ -34,7 +34,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Grapple Directional Input",
+                    "name": "Directional Input",
                     "type": "Value",
                     "id": "431d22d0-11fc-49ab-b033-02448966a08d",
                     "expectedControlType": "Vector2",
@@ -139,7 +139,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Grapple Directional Input",
+                    "action": "Directional Input",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -150,7 +150,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Grapple Directional Input",
+                    "action": "Directional Input",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -161,7 +161,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Grapple Directional Input",
+                    "action": "Directional Input",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -172,7 +172,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Grapple Directional Input",
+                    "action": "Directional Input",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -183,7 +183,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Grapple Directional Input",
+                    "action": "Directional Input",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -194,7 +194,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Grapple Directional Input",
+                    "action": "Directional Input",
                     "isComposite": false,
                     "isPartOfComposite": true
                 }

@@ -205,8 +205,8 @@ Transform:
   m_GameObject: {fileID: 413507777}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.5096, y: 2.55, z: 0}
-  m_LocalScale: {x: 7.29736, y: 2.6495569, z: 1}
+  m_LocalPosition: {x: -10.5096, y: 0.1685, z: 0}
+  m_LocalScale: {x: 7.29736, y: 7.4124002, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -568,7 +568,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -9.34, y: 9.29, z: 0}
+  m_LocalPosition: {x: -9.34, y: 5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -591,7 +591,7 @@ MonoBehaviour:
   playerState: 1
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
-  postGrappleVelocity: {x: 0, y: 0}
+  playerDirectionalInput: {x: 0, y: 0}
   moveSpeed: 0
   groundBoxCastLength: 0.25
   groundBoxCastYOffset: 1
@@ -599,10 +599,22 @@ MonoBehaviour:
   groundRaycastLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  wallBoxCastOffset: 0.5
+  wallBoxCastSize: 1.5
   walkSpeed: 8
   facingRight: 1
   maxJumpHeight: 4
   maxJumpTime: 1
+  onRightWall: 0
+  wallVelocity: 0
+  canGoOnWall: 1
+  isWallClimbing: 0
+  minSlideSpeed: 0.2
+  maxSlideSpeed: 4
+  slideSpeedTweenTime: 0.2
+  climbHeight: 3
+  climbTime: 0.15
+  wallJumpVelocity: {x: 10, y: 100}
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
 --- !u!50 &1152884643
@@ -747,6 +759,18 @@ MonoBehaviour:
       - m_Target: {fileID: 1152884646}
         m_TargetAssemblyTypeName: GrapplerMovement, Assembly-CSharp
         m_MethodName: SetGrappleDirectionalInput
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1152884642}
+        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
+        m_MethodName: DirectionalInput
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -939,7 +963,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1544952924
 Transform:
   m_ObjectHideFlags: 0
@@ -1030,7 +1054,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1776893804
 Transform:
   m_ObjectHideFlags: 0
@@ -1237,7 +1261,7 @@ Transform:
   m_GameObject: {fileID: 1948969600}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.53, y: 2.71, z: 0}
+  m_LocalPosition: {x: -0.44, y: 1.4, z: 0}
   m_LocalScale: {x: 1.6641911, y: 1.6668406, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
