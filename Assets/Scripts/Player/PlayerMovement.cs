@@ -17,7 +17,8 @@ public class PlayerMovement : MonoBehaviour
         GrappleThrow,
         GrappleSwinging,
         OnWall,
-        WallClimbing
+        WallClimbing,
+        Vaulting
     }
 
     //References
@@ -33,10 +34,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float moveSpeed;
 
     [Header("Raycasting")]
+    [SerializeField] private LayerMask playerRaycastLayerMask;
     [SerializeField] private float groundBoxCastLength = 0.75f;
     [SerializeField] private float groundBoxCastYOffset = 1;
     [SerializeField] private float groundRaycastDistance = 1f;
-    [SerializeField] private LayerMask groundRaycastLayerMask;
 
     [SerializeField] private float wallBoxCastOffset = 0.5f;
     [SerializeField] private float wallBoxCastSize = 2f;
@@ -156,9 +157,9 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector2 offset = new Vector2(0, -groundBoxCastYOffset);
 
-        RaycastHit2D hitGround = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, groundRaycastLayerMask);
+        RaycastHit2D hitGround = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
 
-        RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + 0.1f, groundRaycastLayerMask);
+        RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + 0.1f, playerRaycastLayerMask);
 
         //print(((hitLeft || hitRight), playerState == PlayerStates.InAir, velocity.y <= 0));
 
@@ -194,12 +195,18 @@ public class PlayerMovement : MonoBehaviour
         Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
         Vector2 size = new Vector2(0.1f, wallBoxCastSize);
 
-        RaycastHit2D hitLeft = rb.BoxCast(leftOffset, size, 0, Vector2.zero, 1, groundRaycastLayerMask);
-        RaycastHit2D hitRight = rb.BoxCast(rightOffset, size, 0, Vector2.zero, 1, groundRaycastLayerMask);
+        RaycastHit2D hitLeft = rb.BoxCast(leftOffset, size, 0, Vector2.zero, 1, playerRaycastLayerMask);
+        RaycastHit2D hitRight = rb.BoxCast(rightOffset, size, 0, Vector2.zero, 1, playerRaycastLayerMask);
 
-        if ((hitLeft || hitRight) && playerState == PlayerStates.InAir && canGoOnWall)
+        if ((hitLeft || hitRight) && playerState == PlayerStates.InAir && canGoOnWall) //General case (in the air)
         {
             onRightWall = hitRight ? true : false;
+            RaycastHit2D correctHit = onRightWall ? hitRight : hitLeft;
+            
+            if (CheckForVault(correctHit, onRightWall))
+            {
+                return;
+            }
 
             if ((onRightWall && playerDirectionalInput.x > 0) || (!onRightWall && playerDirectionalInput.x < 0))
             {
@@ -211,6 +218,12 @@ public class PlayerMovement : MonoBehaviour
             {
                 playerState = PlayerStates.InAir;
             }
+        }
+        else if ((hitLeft || hitRight) && playerState == PlayerStates.WallClimbing) //Checking for a vault while wall climbing
+        {
+            onRightWall = hitRight ? true : false;
+            RaycastHit2D correctHit = onRightWall ? hitRight : hitLeft;
+            CheckForVault(correctHit, onRightWall);
         }
         else if (playerState == PlayerStates.OnWall && ((onRightWall && playerDirectionalInput.x < 0) || (!onRightWall && playerDirectionalInput.x > 0))) //checking whether input doesn't match the wall direction
         {
@@ -228,6 +241,22 @@ public class PlayerMovement : MonoBehaviour
         float playerXPos = onTheRight ? xCoordinate - wallBoxCastOffset : xCoordinate + wallBoxCastOffset;
         Vector3 newPosition = new Vector3(playerXPos, rb.position.y);
         transform.position = newPosition;
+    }
+
+    //VAULT
+    private bool CheckForVault(RaycastHit2D wallHit, bool hitOnRight)
+    {
+        Vector2 direction = hitOnRight ? Vector2.right : Vector2.left;
+        RaycastHit2D vaultHit = rb.Raycast(Vector2.zero, direction, wallBoxCastOffset + 0.5f, playerRaycastLayerMask);
+        if (!vaultHit)
+        {
+            playerState = PlayerStates.Vaulting;
+            StartCoroutine(Vault(hitOnRight, wallHit.point));
+            return true;
+        } else
+        {
+            return false;
+        }
     }
 
     #endregion
@@ -372,8 +401,14 @@ public class PlayerMovement : MonoBehaviour
     {
         LeanTween.cancel(gameObject);
         playerState = PlayerStates.WallClimbing;
+
         yield return new WaitForSeconds(climbTime);
-        playerState = PlayerStates.OnWall;
+
+        if (playerState != PlayerStates.Vaulting)
+        {
+            playerState = PlayerStates.OnWall;
+        }
+        
         TweenWallSlideSpeed();
         
     }
@@ -401,6 +436,33 @@ public class PlayerMovement : MonoBehaviour
             {
                 wallVelocity = value;
             });
+    }
+
+    #endregion
+
+    #region Vaulting
+
+    private IEnumerator Vault(bool onRightWall, Vector2 hitPoint)
+    {
+        velocity = Vector2.zero;
+        float yOffset = 0.5f - (transform.position.y - hitPoint.y);
+        Vector2 newPos;
+        if (onRightWall)
+        {
+            newPos = new Vector2(rb.position.x + 1, rb.position.y + 0.5f);
+        }
+        else
+        {
+            newPos = new Vector2(rb.position.x - 1, rb.position.y + 0.5f);
+        }
+        transform.position = newPos;
+        Vector2 offset = new Vector2(transform.position.x - rb.position.x, transform.position.y - rb.position.y);
+        Vector2 groundPoint = rb.Raycast(offset, Vector2.down, 2f, playerRaycastLayerMask).point;
+        groundPoint.y += 0.5f;
+        transform.position = groundPoint;
+
+        yield return new WaitForSeconds(0.5f);
+        playerState = PlayerStates.Grounded;
     }
 
     #endregion
