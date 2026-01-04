@@ -229,6 +229,7 @@ public class PlayerMovement : MonoBehaviour
         else if (playerState == PlayerStates.OnWall && ((onRightWall && playerDirectionalInput.x < 0) || (!onRightWall && playerDirectionalInput.x > 0))) //checking whether input doesn't match the wall direction
         {
             playerState = PlayerStates.InAir;
+            StartCoroutine(SetCannotGoOnWallTimer(0.1f));
         }
         else if (!(hitLeft || hitRight) && playerState == PlayerStates.OnWall)
         {
@@ -434,6 +435,13 @@ public class PlayerMovement : MonoBehaviour
         playerCannotMove = true;
         yield return new WaitForSeconds(0.1f);
         playerCannotMove = false;
+        canGoOnWall = true;
+    }
+
+    private IEnumerator SetCannotGoOnWallTimer(float timeSeconds)
+    {
+        canGoOnWall = false;
+        yield return new WaitForSeconds(timeSeconds);
         canGoOnWall = true;
     }
 
