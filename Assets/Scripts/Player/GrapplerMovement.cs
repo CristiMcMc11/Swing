@@ -9,8 +9,8 @@ public class GrapplerMovement : MonoBehaviour
     private PlayerMovement playerMovementScript;
 
     [Header("Grappler Swing Runtime")]
-    [SerializeField] private Vector2 grappleDirectionalInput;
-    [SerializeField] private float grappleDistance;
+    [SerializeField] private Vector2 directionalInput;
+    [SerializeField] private float grapplePointDistance;
     [SerializeField] private Vector2 grapplePoint;
 
     [SerializeField] private Vector2 directionFromPrevPoint;
@@ -20,9 +20,10 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private bool movingRight = true;
 
     [Header("Grappler Settables")]
-    [SerializeField] private float maxGrappleDistance = 20;
-    [SerializeField] private float maxGrappleThrowTime = 0.5f;
-    [SerializeField] private float grapplePullSpeed = 5f;
+    [SerializeField] private float maxDistance = 20;
+    [SerializeField] private float leniency = 5f;
+    [SerializeField] private float maxThrowTime = 0.5f;
+    [SerializeField] private float pullSpeed = 5f;
 
 
     private void Awake()
@@ -31,9 +32,17 @@ public class GrapplerMovement : MonoBehaviour
         playerMovementScript = GetComponent<PlayerMovement>();
     }
 
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.greenYellow;
+    //    Gizmos.DrawCube(transform.position, new Vector2(leniency, maxDistance));
+    //    Gizmos.DrawRay(transform.position, directionalInput);
+        
+    //}
+
     public void SetGrappleDirectionalInput(InputAction.CallbackContext context)
     {
-        grappleDirectionalInput = context.ReadValue<Vector2>();
+        directionalInput = context.ReadValue<Vector2>();
     }
 
     public IEnumerator GrappleThrowCoroutine()
@@ -48,7 +57,7 @@ public class GrapplerMovement : MonoBehaviour
         //animation for throwing grapple
         yield return new WaitForSeconds(time);
 
-        grappleDistance = Vector2.Distance(rb.position, grapplePoint);
+        grapplePointDistance = Vector2.Distance(rb.position, grapplePoint);
 
         if (grappleHit)
         {
@@ -61,30 +70,47 @@ public class GrapplerMovement : MonoBehaviour
         }
     }
 
+    #region Raycasting
+
+    private Vector2 FindGrapplePoint(ref bool grappleHit)
+    {
+        LayerMask layerMask = playerMovementScript.playerRaycastLayerMask;
+
+        //1. Throw a raycast in the desired direction
+        RaycastHit2D rayHit = rb.Raycast(Vector2.zero, directionalInput, maxDistance, layerMask);
+
+        if (rayHit)
+        {
+            return rayHit.point;
+        }
+
+        //2. Throw a boxCast in the desired direction to give leniency if the player sucks and missed
+        Vector2 boxSize = new Vector2(leniency, maxDistance);
+        Vector2 offset = directionalInput * (maxDistance / 2);
+        RaycastHit2D boxHit = rb.BoxCast(offset, boxSize, 0, directionalInput, maxDistance, layerMask);
+
+        if (boxHit)
+        {
+            return boxHit.point;
+        }
+
+        //3. Both missed and the grapple misses
+        grappleHit = false;
+        return Vector2.zero;
+    }
+
+    #endregion
+
     #region Grappler Swing Logic
 
     private void StartGrappleSwinging()
     {
-        grappleSpeed = VelocityToAngleSpeed(playerMovementScript.GetVelocity(), grappleDistance);
+        grappleSpeed = VelocityToAngleSpeed(playerMovementScript.GetVelocity(), grapplePointDistance);
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
         playerMovementScript.playerState = PlayerMovement.PlayerStates.GrappleSwinging;
     } 
 
-    private Vector2 FindGrapplePoint(ref bool grappleHit)
-    {
-        int layerMask = LayerMask.GetMask("Terrain");
-        RaycastHit2D hit = rb.Raycast(Vector2.zero, grappleDirectionalInput, maxGrappleDistance, layerMask);
-
-        if (hit)
-        {
-            return hit.point;
-        }
-        else
-        {
-            grappleHit = false;
-            return Vector2.zero;
-        }
-    }
+    
 
     /// <summary>
     /// Calculates the point the player should move to next while grapple swinging.
@@ -115,14 +141,14 @@ public class GrapplerMovement : MonoBehaviour
 
     public Vector2 GrappleSwingMovement()
     {
-        float currentPlayerAngle = FindCurrentPlayerAngleRad(grapplePoint, grappleDistance);
-        Vector2 newPosition = GrappleSwingNextPosition(grappleDistance, grapplePoint, CalculateAngleSpeed(currentPlayerAngle));
+        float currentPlayerAngle = FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance);
+        Vector2 newPosition = GrappleSwingNextPosition(grapplePointDistance, grapplePoint, CalculateAngleSpeed(currentPlayerAngle));
         return newPosition;
     }
 
     public Vector2 SetPostGrappleVelocity()
     {
-        return AngleSpeedToVelocity(grappleSpeed, grappleDistance, playerMovementScript.grapplerDirectionFromPrevPoint);
+        return AngleSpeedToVelocity(grappleSpeed, grapplePointDistance, playerMovementScript.grapplerDirectionFromPrevPoint);
     }
 
     #endregion
@@ -186,7 +212,7 @@ public class GrapplerMovement : MonoBehaviour
     private float CalculateAngleSpeed(float currentPlayerAngleRad)
     {
         bool isOnTheRight = currentPlayerAngleRad * Mathf.Rad2Deg >= 270 || currentPlayerAngleRad * Mathf.Rad2Deg <= 90;
-        float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -playerMovementScript.gravity), grappleDistance);
+        float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -playerMovementScript.gravity), grapplePointDistance);
 
         //If the player is on the right, add gravityAngleSpeed. If the player is on the right, subtract gravityAngleSpeed
         grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
@@ -197,9 +223,9 @@ public class GrapplerMovement : MonoBehaviour
     {
         if (grappleHit)
         {
-            return (distance / maxGrappleDistance) * maxGrappleThrowTime;
+            return (distance / maxDistance) * maxThrowTime;
         }
-        return maxGrappleThrowTime;
+        return maxThrowTime;
     }
 
     #endregion
@@ -218,7 +244,7 @@ public class GrapplerMovement : MonoBehaviour
         }
 
         Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
-        return rb.position + directionToGrapplePoint * grapplePullSpeed * Time.fixedDeltaTime;
+        return rb.position + directionToGrapplePoint * pullSpeed * Time.fixedDeltaTime;
     }
 
     public Vector2 CancelGrapplePull()
@@ -228,7 +254,7 @@ public class GrapplerMovement : MonoBehaviour
         if (!TouchingGround())
         {
             Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
-            exitVelocity = directionToGrapplePoint * grapplePullSpeed;
+            exitVelocity = directionToGrapplePoint * pullSpeed;
         }
 
         playerMovementScript.playerState = PlayerMovement.PlayerStates.InAir;

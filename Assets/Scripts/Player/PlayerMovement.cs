@@ -36,7 +36,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float moveSpeed;
 
     [Header("Raycasting")]
-    [SerializeField] private LayerMask playerRaycastLayerMask;
+    public LayerMask playerRaycastLayerMask;
     [SerializeField] private float groundBoxCastLength = 0.75f;
     [SerializeField] private float groundBoxCastYOffset = 1;
     [SerializeField] private float groundRaycastDistance = 1f;
