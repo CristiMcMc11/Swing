@@ -30,7 +30,12 @@ public class PlayerMovement : MonoBehaviour
     public PlayerStates playerState  = PlayerStates.Grounded;
     [SerializeField] private Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
+
     [SerializeField] private Vector2 playerDirectionalInput = Vector2.zero;
+    [SerializeField] private Vector2 playerMoveInput = Vector2.zero;
+
+    [SerializeField] private bool banMoveRight = false;
+    [SerializeField] private bool banMoveLeft = false;
 
     [SerializeField] private bool playerCannotMove = false;
     [SerializeField] private float moveSpeed;
@@ -87,6 +92,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        SetMoveSpeed();
         CheckForWallTouch();
         CheckForGrounded();
         DecayAdditionalVelocity();
@@ -99,9 +105,28 @@ public class PlayerMovement : MonoBehaviour
         return velocity;
     }
 
-     /// <summary>
-     /// Applies the changes in velocity through code to the player's position in the scene. This is applied differently for each playerState
-     /// </summary>
+    private void SetMoveSpeed()
+    {
+        moveSpeed = walkSpeed * playerMoveInput.x;
+        
+        if (banMoveLeft && moveSpeed < 0 || banMoveRight && moveSpeed > 0)
+        {
+            moveSpeed = 0;
+        } 
+    }
+
+    private IEnumerator SetBanMoveTimer(bool leftBan, bool rightBan, float timeSec)
+    {
+        banMoveLeft = leftBan ? true : banMoveLeft;
+        banMoveRight = rightBan ? true : banMoveRight;
+        yield return new WaitForSeconds(timeSec);
+        banMoveLeft = leftBan ? false : banMoveLeft;
+        banMoveRight = rightBan ? false : banMoveRight;
+    }
+
+    /// <summary>
+    /// Applies the changes in velocity through code to the player's position in the scene. This is applied differently for each playerState
+    /// </summary>
     private void ApplyMovement()
     {
 
@@ -117,6 +142,8 @@ public class PlayerMovement : MonoBehaviour
                 //Use gravity and horizontal input
                 ApplyGravity();
                 ApplyAdditionalVelocity();
+
+                print(velocity);
 
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
@@ -271,9 +298,7 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="context"></param>
     public void OnMove(InputAction.CallbackContext context)
     {
-        Vector2 moveInput = context.ReadValue<Vector2>();
-        //directionToGrapplePoint = moveInput.normalized;
-        moveSpeed = walkSpeed * moveInput.x;
+        playerMoveInput = context.ReadValue<Vector2>();
     }
 
     public void OnJump(InputAction.CallbackContext context)
@@ -325,7 +350,6 @@ public class PlayerMovement : MonoBehaviour
     {
         playerDirectionalInput = context.ReadValue<Vector2>();
     }
-
     #endregion
 
     #region Air
@@ -344,26 +368,27 @@ public class PlayerMovement : MonoBehaviour
         if (additionalVelocity.x == 0)
         {
             velocity.x = moveSpeed;
+            return;
         }
 
-        if (playerDirectionalInput.x == 0)
+        if (moveSpeed == 0)
         {
             velocity.x = additionalVelocity.x;
             return;
         }
 
-        bool inputOpposingVelocity = (playerDirectionalInput.x < 0 && additionalVelocity.x > 0) || (playerDirectionalInput.x > 0 && additionalVelocity.x < 0);
+        bool inputOpposingVelocity = (moveSpeed < 0 && additionalVelocity.x > 0) || (moveSpeed > 0 && additionalVelocity.x < 0);  
         if (inputOpposingVelocity)
         {
             velocity.x = moveSpeed;
         }
         else
         {
-            if (playerDirectionalInput.x > 0)
+            if (playerMoveInput.x > 0)
             {
                 velocity.x = Mathf.Max(moveSpeed, additionalVelocity.x);
             }
-            else if (playerDirectionalInput.x < 0)
+            else if (playerMoveInput.x < 0)
             {
                 velocity.x = Mathf.Min(moveSpeed, additionalVelocity.x);
             }
@@ -383,7 +408,7 @@ public class PlayerMovement : MonoBehaviour
             additionalVelocity.y = additionalVelocity.y < 0.01f ? 0 : additionalVelocity.y;
 
             additionalVelocity.x = additionalVelocity.x < 0 ? Mathf.Min(additionalVelocity.x + PGVxDecayFactor, 0) : Mathf.Max(additionalVelocity.x - PGVxDecayFactor, 0);
-            if ((playerDirectionalInput.x < 0 && additionalVelocity.x > 0) || (playerDirectionalInput.x > 0 && additionalVelocity.x < 0))
+            if ((moveSpeed < 0 && additionalVelocity.x > 0) || (moveSpeed > 0 && additionalVelocity.x < 0))
             {
                 additionalVelocity.x = 0;
             }
@@ -427,14 +452,15 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator WallJump()
     {
-        playerState = PlayerStates.InAir;
         additionalVelocity = wallJumpVelocity;
         additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
 
+        StartCoroutine(SetBanMoveTimer(!onRightWall, onRightWall, 0.1f));
+
+        playerState = PlayerStates.InAir;
+
         canGoOnWall = false;
-        playerCannotMove = true;
         yield return new WaitForSeconds(0.1f);
-        playerCannotMove = false;
         canGoOnWall = true;
     }
 
