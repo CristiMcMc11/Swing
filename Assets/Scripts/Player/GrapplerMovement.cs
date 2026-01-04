@@ -1,4 +1,5 @@
 using System.Collections;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -21,6 +22,7 @@ public class GrapplerMovement : MonoBehaviour
     [Header("Grappler Settables")]
     [SerializeField] private float maxGrappleDistance = 20;
     [SerializeField] private float maxGrappleThrowTime = 0.5f;
+    [SerializeField] private float grapplePullSpeed = 5f;
 
 
     private void Awake()
@@ -33,8 +35,6 @@ public class GrapplerMovement : MonoBehaviour
     {
         grappleDirectionalInput = context.ReadValue<Vector2>();
     }
-
-    #region Grappler Swing Logic
 
     public IEnumerator GrappleThrowCoroutine()
     {
@@ -61,12 +61,14 @@ public class GrapplerMovement : MonoBehaviour
         }
     }
 
+    #region Grappler Swing Logic
+
     private void StartGrappleSwinging()
     {
         grappleSpeed = VelocityToAngleSpeed(playerMovementScript.GetVelocity(), grappleDistance);
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
         playerMovementScript.playerState = PlayerMovement.PlayerStates.GrappleSwinging;
-    }
+    } 
 
     private Vector2 FindGrapplePoint(ref bool grappleHit)
     {
@@ -201,4 +203,54 @@ public class GrapplerMovement : MonoBehaviour
     }
 
     #endregion
+
+    #region Grapple Pull
+    public void StartGrapplePulling()
+    {
+        playerMovementScript.playerState = PlayerMovement.PlayerStates.GrapplePulling;
+    }
+
+    public Vector2 GrapplePullMovement()
+    {
+        if (TouchingGround())
+        {
+            return rb.position;
+        }
+
+        Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
+        return rb.position + directionToGrapplePoint * grapplePullSpeed * Time.fixedDeltaTime;
+    }
+
+    public Vector2 CancelGrapplePull()
+    {
+        Vector2 exitVelocity = Vector2.zero;
+
+        if (!TouchingGround())
+        {
+            Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
+            exitVelocity = directionToGrapplePoint * grapplePullSpeed;
+        }
+
+        playerMovementScript.playerState = PlayerMovement.PlayerStates.InAir;
+        exitVelocity.y *= 2;
+        return exitVelocity;
+    }
+
+    private bool TouchingGround()
+    {
+        CapsuleCollider2D playerCollider = GetComponent<CapsuleCollider2D>();
+        Collider2D[] hitColliders = Physics2D.OverlapCapsuleAll(rb.position, playerCollider.size, playerCollider.direction, 0);
+
+        foreach (Collider2D collider in hitColliders)
+        {
+            if (collider.gameObject.layer == LayerMask.NameToLayer("Terrain"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
+
+#endregion

@@ -16,6 +16,7 @@ public class PlayerMovement : MonoBehaviour
         InAir,
         GrappleThrow,
         GrappleSwinging,
+        GrapplePulling,
         OnWall,
         WallClimbing,
         Vaulting
@@ -31,6 +32,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 additionalVelocity;
     [SerializeField] private Vector2 playerDirectionalInput = Vector2.zero;
 
+    [SerializeField] private bool playerCannotMove = false;
     [SerializeField] private float moveSpeed;
 
     [Header("Raycasting")]
@@ -80,7 +82,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        
+
     }
 
     private void FixedUpdate()
@@ -88,6 +90,7 @@ public class PlayerMovement : MonoBehaviour
         CheckForWallTouch();
         CheckForGrounded();
         DecayAdditionalVelocity();
+
         ApplyMovement();
     }
 
@@ -101,6 +104,7 @@ public class PlayerMovement : MonoBehaviour
      /// </summary>
     private void ApplyMovement()
     {
+
         switch (playerState)
         {
             case PlayerStates.Grounded:
@@ -131,6 +135,10 @@ public class PlayerMovement : MonoBehaviour
                 rb.MovePosition(newPosition);
 
                 grapplerDirectionFromPrevPoint = (newPosition - prevPoint).normalized;
+                break;
+
+            case PlayerStates.GrapplePulling:
+                rb.MovePosition(grapplerMovementScript.GrapplePullMovement());
                 break;
 
             case PlayerStates.OnWall:
@@ -208,16 +216,9 @@ public class PlayerMovement : MonoBehaviour
                 return;
             }
 
-            if ((onRightWall && playerDirectionalInput.x > 0) || (!onRightWall && playerDirectionalInput.x < 0))
-            {
-                playerState = PlayerStates.OnWall;
-                TweenWallSlideSpeed();
-                OffsetWallPlayerPosition(hitLeft ? hitLeft : hitRight, hitLeft ? false : true);
-            }
-            else
-            {
-                playerState = PlayerStates.InAir;
-            }
+            playerState = PlayerStates.OnWall;
+            TweenWallSlideSpeed();
+            OffsetWallPlayerPosition(hitLeft ? hitLeft : hitRight, hitLeft ? false : true);
         }
         else if ((hitLeft || hitRight) && playerState == PlayerStates.WallClimbing) //Checking for a vault while wall climbing
         {
@@ -248,7 +249,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector2 direction = hitOnRight ? Vector2.right : Vector2.left;
         RaycastHit2D vaultHit = rb.Raycast(Vector2.zero, direction, wallBoxCastOffset + 0.5f, playerRaycastLayerMask);
-        if (!vaultHit)
+        if (!vaultHit && wallHit.point.y <= rb.position.y)
         {
             playerState = PlayerStates.Vaulting;
             StartCoroutine(Vault(hitOnRight, wallHit.point));
@@ -306,6 +307,16 @@ public class PlayerMovement : MonoBehaviour
         {
             playerState = PlayerStates.GrappleThrow;
             StartCoroutine(grapplerMovementScript.GrappleThrowCoroutine());
+        }
+        else if (keyPressed && playerState == PlayerStates.GrappleSwinging)
+        {
+            grapplerMovementScript.StartGrapplePulling();
+        }
+        else if (!keyPressed && playerState == PlayerStates.GrapplePulling)
+        {
+            velocity = Vector2.zero;
+            additionalVelocity = grapplerMovementScript.CancelGrapplePull();
+            CheckForWallTouch();
         }
     }
 
@@ -420,7 +431,9 @@ public class PlayerMovement : MonoBehaviour
         additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
 
         canGoOnWall = false;
+        playerCannotMove = true;
         yield return new WaitForSeconds(0.1f);
+        playerCannotMove = false;
         canGoOnWall = true;
     }
 
