@@ -255,10 +255,23 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D hitLeft = rb.BoxCast(leftOffset, size, 0, Vector2.zero, 1, playerRaycastLayerMask);
         RaycastHit2D hitRight = rb.BoxCast(rightOffset, size, 0, Vector2.zero, 1, playerRaycastLayerMask);
 
-        if ((hitLeft || hitRight) && playerState == PlayerStates.InAir && canGoOnWall) //General case (in the air)
+        float extraLength = CalculateOffsetRaycastExtraLength(velocity.x);
+        RaycastHit2D rayLeft = rb.Raycast(Vector2.zero, Vector2.left, leftOffset.magnitude + extraLength, playerRaycastLayerMask);
+        RaycastHit2D rayRight = rb.Raycast(Vector2.zero, Vector2.right, rightOffset.magnitude + extraLength, playerRaycastLayerMask);
+
+        if ((hitLeft || hitRight || rayLeft || rayRight) && playerState == PlayerStates.InAir && canGoOnWall) //General case (in the air)
         {
-            onRightWall = hitRight ? true : false;
-            RaycastHit2D correctHit = onRightWall ? hitRight : hitLeft;
+            RaycastHit2D correctHit;
+            if (hitLeft || hitRight)
+            {
+                onRightWall = hitRight ? true : false;
+                correctHit = onRightWall ? hitRight : hitLeft;
+            }
+            else
+            {
+                onRightWall = rayRight ? true : false;
+                correctHit = onRightWall ? rayRight : rayLeft;
+            }
             
             if (CheckForVault(correctHit, onRightWall))
             {
@@ -267,7 +280,7 @@ public class PlayerMovement : MonoBehaviour
 
             playerState = PlayerStates.OnWall;
             TweenWallSlideSpeed();
-            OffsetWallPlayerPosition(hitLeft ? hitLeft : hitRight, hitLeft ? false : true);
+            OffsetWallPlayerPosition(correctHit, onRightWall);
         }
         else if ((hitLeft || hitRight) && playerState == PlayerStates.WallClimbing) //Checking for a vault while wall climbing
         {
