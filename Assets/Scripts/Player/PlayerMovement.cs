@@ -55,7 +55,8 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Jumping")]
     [SerializeField] private float maxJumpHeight = 5f;
-    [SerializeField] private float maxJumpTime = 1f;
+    [SerializeField] private float maxJumpTime = 1f; 
+    [SerializeField] private float terminalVelocity = -20;
     public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
     public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
 
@@ -184,7 +185,6 @@ public class PlayerMovement : MonoBehaviour
                 break;
 
         }
-
         CheckForWallTouch();
         CheckForGrounded();
     }
@@ -226,6 +226,16 @@ public class PlayerMovement : MonoBehaviour
         Vector3 newPosition = new Vector3(rb.position.x, rb.position.y + yOffset);
         transform.position = newPosition;
     }
+
+    //private float DetermineOffsetRaycastExtraLength(float yVelocity)
+    //{
+    //    if (yVelocity > -10)
+    //    {
+    //        return 0.1f;
+    //    }
+
+    //    return 0;
+    //}
 
     //AIR
     private void CheckForHeadhit()
@@ -374,8 +384,7 @@ public class PlayerMovement : MonoBehaviour
     private void ApplyGravity()
     {
         velocity.y += gravity * Time.deltaTime;
-
-        //velocity.y = Mathf.Max(velocity.y, gravity / 2f);
+        velocity.y = Mathf.Max(velocity.y, terminalVelocity);
     }
 
     private void ApplyAdditionalVelocity()

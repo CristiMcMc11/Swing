@@ -122,7 +122,6 @@ public class GrapplerMovement : MonoBehaviour
     /// <returns> The point the player should move to next </returns>
     private Vector2 GrappleSwingNextPosition(float distance, Vector2 grapplePoint, float angleToMove)
     {
-        print(angleToMove);
         if (CheckGrappleWallHit(angleToMove))
         {
             grappleSpeed = 0;
