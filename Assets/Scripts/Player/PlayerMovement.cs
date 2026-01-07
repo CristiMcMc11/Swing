@@ -198,7 +198,7 @@ public class PlayerMovement : MonoBehaviour
 
         RaycastHit2D hitGround = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
 
-        RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + 0.1f, playerRaycastLayerMask);
+        RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + CalculateOffsetRaycastExtraLength(velocity.y), playerRaycastLayerMask);
 
         //print(((hitLeft || hitRight), playerState == PlayerStates.InAir, velocity.y <= 0));
 
@@ -227,15 +227,10 @@ public class PlayerMovement : MonoBehaviour
         transform.position = newPosition;
     }
 
-    //private float DetermineOffsetRaycastExtraLength(float yVelocity)
-    //{
-    //    if (yVelocity > -10)
-    //    {
-    //        return 0.1f;
-    //    }
-
-    //    return 0;
-    //}
+    private float CalculateOffsetRaycastExtraLength(float velocity)
+    {
+        return Mathf.Abs(velocity/50);
+    }
 
     //AIR
     private void CheckForHeadhit()
