@@ -90,11 +90,18 @@ public class PlayerMovement : MonoBehaviour
 
     }
 
+    private void OnDrawGizmos()
+    {
+        Vector2 position = new Vector2(transform.position.x, transform.position.y) + new Vector2(0, groundBoxCastYOffset);
+        Gizmos.DrawCube(position, new Vector2(groundBoxCastLength, 0.1f));
+    }
+
     private void FixedUpdate()
     {
         SetMoveSpeed();
         CheckForWallTouch();
         CheckForGrounded();
+        CheckForHeadhit();
         DecayAdditionalVelocity();
 
         ApplyMovement();
@@ -142,9 +149,6 @@ public class PlayerMovement : MonoBehaviour
                 //Use gravity and horizontal input
                 ApplyGravity();
                 ApplyAdditionalVelocity();
-
-                print(velocity);
-
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -221,6 +225,19 @@ public class PlayerMovement : MonoBehaviour
         float yOffset = groundRaycastDistance - (rb.position.y - hitYCoord);
         Vector3 newPosition = new Vector3(rb.position.x, rb.position.y + yOffset);
         transform.position = newPosition;
+    }
+
+    //AIR
+    private void CheckForHeadhit()
+    {
+        Vector2 offset = new Vector2(0, groundBoxCastYOffset);
+        RaycastHit2D hit = rb.BoxCast(Vector2.zero, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
+
+        if (hit && velocity.y > 0)
+        {
+            velocity.y = 0;
+            additionalVelocity.y = 0;
+        }
     }
 
     //WALL
@@ -520,7 +537,6 @@ public class PlayerMovement : MonoBehaviour
     {
         playerState = PlayerStates.InAir;
         additionalVelocity = grapplerMovementScript.SetPostGrappleVelocity();
-        print(additionalVelocity);
         velocity = additionalVelocity;
     }
 

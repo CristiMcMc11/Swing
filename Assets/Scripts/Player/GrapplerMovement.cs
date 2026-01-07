@@ -18,6 +18,7 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private float originalAngleSpeed;
     [SerializeField] private float speedEquationFactor;
     [SerializeField] private bool movingRight = true;
+    [SerializeField] private bool canHitWall = true;
 
     [Header("Grappler Settables")]
     [SerializeField] private float maxDistance = 20;
@@ -121,6 +122,12 @@ public class GrapplerMovement : MonoBehaviour
     /// <returns> The point the player should move to next </returns>
     private Vector2 GrappleSwingNextPosition(float distance, Vector2 grapplePoint, float angleToMove)
     {
+        print(angleToMove);
+        if (CheckGrappleWallHit(angleToMove))
+        {
+            grappleSpeed = 0;
+            angleToMove = 0;
+        }
         angleToMove *= Time.fixedDeltaTime;
 
         Vector2 prevPoint = rb.position;
@@ -137,6 +144,21 @@ public class GrapplerMovement : MonoBehaviour
         float y = grapplePoint.y + radius * Mathf.Sin(newAngle);
 
         return new Vector2(x, y);
+    }
+
+    private bool CheckGrappleWallHit(float angleToMove)
+    {
+        if (TouchingGround() && angleToMove != 0 && canHitWall)
+        {
+            canHitWall = false;
+            return true;
+        }
+
+        if (!TouchingGround() && !canHitWall)
+        {
+            canHitWall = true;
+        }
+        return false;
     }
 
     public Vector2 GrappleSwingMovement()
@@ -214,7 +236,7 @@ public class GrapplerMovement : MonoBehaviour
         bool isOnTheRight = currentPlayerAngleRad * Mathf.Rad2Deg >= 270 || currentPlayerAngleRad * Mathf.Rad2Deg <= 90;
         float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -playerMovementScript.gravity), grapplePointDistance);
 
-        //If the player is on the right, add gravityAngleSpeed. If the player is on the right, subtract gravityAngleSpeed
+        //If the player is on the right, add gravityAngleSpeed. If the player is on the left, subtract gravityAngleSpeed
         grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
         return grappleSpeed;
     }
