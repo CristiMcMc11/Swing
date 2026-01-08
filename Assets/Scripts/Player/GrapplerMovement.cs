@@ -106,7 +106,7 @@ public class GrapplerMovement : MonoBehaviour
 
     private void StartGrappleSwinging()
     {
-        grappleSpeed = VelocityToAngleSpeed(playerMovementScript.GetVelocity(), grapplePointDistance);
+        grappleSpeed = InitialVelocityToAngleSpeed(playerMovementScript.GetVelocity(), FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance), grapplePointDistance);
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
         playerMovementScript.playerState = PlayerMovement.PlayerStates.GrappleSwinging;
     } 
@@ -175,6 +175,21 @@ public class GrapplerMovement : MonoBehaviour
     #endregion
 
     #region Grappler Swing Calculations
+
+    private float InitialVelocityToAngleSpeed(Vector2 playerVelocity, float radius, float playerAngleRad)
+    {
+        playerAngleRad = playerAngleRad % Mathf.PI; //Angle must be between 0 and pi for equations to work
+
+        float speed = 0;
+        print((playerAngleRad * Mathf.Rad2Deg, (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1), (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2))));
+
+        speed += Mathf.Abs(playerVelocity.x * (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1));
+        speed += Mathf.Abs(playerVelocity.y * (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2)));
+
+        float angleSpeedRad = speed / radius;
+        angleSpeedRad = playerVelocity.x >= 0 ? angleSpeedRad : -angleSpeedRad;
+        return angleSpeedRad;
+    }
 
     private float VelocityToAngleSpeed(Vector2 playerVelocity, float radius)
     {

@@ -198,7 +198,7 @@ public class PlayerMovement : MonoBehaviour
 
         RaycastHit2D hitGround = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
 
-        RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + CalculateOffsetRaycastExtraLength(velocity.y), playerRaycastLayerMask);
+        RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + CalculateRaycastExtraLength(velocity.y), playerRaycastLayerMask);
 
         //print(((hitLeft || hitRight), playerState == PlayerStates.InAir, velocity.y <= 0));
 
@@ -227,7 +227,7 @@ public class PlayerMovement : MonoBehaviour
         transform.position = newPosition;
     }
 
-    private float CalculateOffsetRaycastExtraLength(float velocity)
+    private float CalculateRaycastExtraLength(float velocity)
     {
         return Mathf.Abs(velocity/50);
     }
@@ -255,7 +255,7 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D hitLeft = rb.BoxCast(leftOffset, size, 0, Vector2.zero, 1, playerRaycastLayerMask);
         RaycastHit2D hitRight = rb.BoxCast(rightOffset, size, 0, Vector2.zero, 1, playerRaycastLayerMask);
 
-        float extraLength = CalculateOffsetRaycastExtraLength(velocity.x);
+        float extraLength = CalculateRaycastExtraLength(velocity.x);
         RaycastHit2D rayLeft = rb.Raycast(Vector2.zero, Vector2.left, leftOffset.magnitude + extraLength, playerRaycastLayerMask);
         RaycastHit2D rayRight = rb.Raycast(Vector2.zero, Vector2.right, rightOffset.magnitude + extraLength, playerRaycastLayerMask);
 
