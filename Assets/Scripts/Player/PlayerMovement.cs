@@ -208,6 +208,12 @@ public class PlayerMovement : MonoBehaviour
             velocity.y = 0;
             OffsetGroundPlayerPosition(hitCenter);
         }
+        else if (hitGround && playerState == PlayerStates.GrappleSwinging)
+        {
+            playerState = PlayerStates.Grounded;
+            velocity.y = 0;
+            OffsetGroundPlayerPosition(hitCenter);
+        }
         else if (hitCenter && playerState == PlayerStates.InAir && velocity.y < 0)
         {
             OffsetGroundPlayerPosition(hitCenter);
@@ -259,7 +265,7 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D rayLeft = rb.Raycast(Vector2.zero, Vector2.left, leftOffset.magnitude + extraLength, playerRaycastLayerMask);
         RaycastHit2D rayRight = rb.Raycast(Vector2.zero, Vector2.right, rightOffset.magnitude + extraLength, playerRaycastLayerMask);
 
-        if ((hitLeft || hitRight || rayLeft || rayRight) && playerState == PlayerStates.InAir && canGoOnWall) //General case (in the air)
+        if ((hitLeft || hitRight || rayLeft || rayRight) && (playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwinging) && canGoOnWall) //General case (in the air)
         {
             RaycastHit2D correctHit;
             if (hitLeft || hitRight)
@@ -293,7 +299,7 @@ public class PlayerMovement : MonoBehaviour
             playerState = PlayerStates.InAir;
             StartCoroutine(SetCannotGoOnWallTimer(0.1f));
         }
-        else if (!(hitLeft || hitRight) && playerState == PlayerStates.OnWall)
+        else if (!(hitLeft || hitRight) && playerState == PlayerStates.OnWall) //fell off the wall
         {
             playerState = PlayerStates.InAir;
         }
