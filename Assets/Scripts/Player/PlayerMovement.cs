@@ -91,12 +91,6 @@ public class PlayerMovement : MonoBehaviour
 
     }
 
-    private void OnDrawGizmos()
-    {
-        Vector2 position = new Vector2(transform.position.x, transform.position.y) + new Vector2(0, groundBoxCastYOffset);
-        Gizmos.DrawCube(position, new Vector2(groundBoxCastLength, 0.1f));
-    }
-
     private void FixedUpdate()
     {
         SetMoveSpeed();

@@ -205,11 +205,11 @@ public class GrapplerMovement : MonoBehaviour
     private Vector2 AngleSpeedToVelocity(float angleSpeed, float radius, Vector2 directionFromPrevPoint)
     {
         //Find the distance of an arc with the radius and the angle
-        float magnitude = angleSpeed * radius;
+        float magnitude = Mathf.Abs(angleSpeed) * radius;
 
         Vector2 velocity = directionFromPrevPoint * magnitude;
-        velocity.y = angleSpeed < 0 ? -velocity.y : velocity.y;
-        velocity.x = directionFromPrevPoint.x < 0 ? -velocity.x : velocity.x;
+        //velocity.y = angleSpeed < 0 ? -velocity.y : velocity.y;
+        //velocity.x = directionFromPrevPoint.x < 0 ? -velocity.x : velocity.x;
 
         return velocity;
     }
