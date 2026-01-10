@@ -265,7 +265,12 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D rayLeft = rb.Raycast(Vector2.zero, Vector2.left, leftOffset.magnitude + extraLength, playerRaycastLayerMask);
         RaycastHit2D rayRight = rb.Raycast(Vector2.zero, Vector2.right, rightOffset.magnitude + extraLength, playerRaycastLayerMask);
 
-        if ((hitLeft || hitRight || rayLeft || rayRight) && (playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwinging) && canGoOnWall) //General case (in the air)
+
+        bool wallIsHit = hitLeft || hitRight || rayLeft || rayRight;
+        bool playerIsCorrectState = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwinging;
+        bool playerHasCorrectDirectionalInput = ((hitLeft || rayLeft) && moveSpeed < 0) || ((hitRight || rayRight) && moveSpeed > 0);
+
+        if (wallIsHit && playerIsCorrectState && canGoOnWall && playerHasCorrectDirectionalInput) //General case (in the air)
         {
             RaycastHit2D correctHit;
             if (hitLeft || hitRight)
@@ -284,9 +289,7 @@ public class PlayerMovement : MonoBehaviour
                 return;
             }
 
-            playerState = PlayerStates.OnWall;
-            TweenWallSlideSpeed();
-            OffsetWallPlayerPosition(correctHit, onRightWall);
+            EnterWall(correctHit);
         }
         else if ((hitLeft || hitRight) && playerState == PlayerStates.WallClimbing) //Checking for a vault while wall climbing
         {
@@ -294,14 +297,13 @@ public class PlayerMovement : MonoBehaviour
             RaycastHit2D correctHit = onRightWall ? hitRight : hitLeft;
             CheckForVault(correctHit, onRightWall);
         }
-        else if (playerState == PlayerStates.OnWall && ((onRightWall && playerDirectionalInput.x < 0) || (!onRightWall && playerDirectionalInput.x > 0))) //checking whether input doesn't match the wall direction
+        else if (playerState == PlayerStates.OnWall && ((onRightWall && moveSpeed < 0) || (!onRightWall && moveSpeed > 0))) //checking whether input doesn't match the wall direction
         {
-            playerState = PlayerStates.InAir;
-            StartCoroutine(SetCannotGoOnWallTimer(0.1f));
+            LeaveWall(false);
         }
         else if (!(hitLeft || hitRight) && playerState == PlayerStates.OnWall) //fell off the wall
         {
-            playerState = PlayerStates.InAir;
+            LeaveWall(false);
         }
     }
 
@@ -466,42 +468,52 @@ public class PlayerMovement : MonoBehaviour
         if (playerDirectionalInput.y > 0)
         {
             StartCoroutine(WallClimb());
-            
         }
         else
         {
-            StartCoroutine(WallJump());
+            WallJump();
         }
+    }
+
+    private void EnterWall(RaycastHit2D correctHit)
+    {
+        playerState = PlayerStates.OnWall;
+        TweenWallSlideSpeed();
+        OffsetWallPlayerPosition(correctHit, onRightWall);
+    }
+
+    private void LeaveWall(bool wallJump)
+    {
+        velocity.y = additionalVelocity.y;
+        if (wallJump)
+        {
+            StartCoroutine(SetBanMoveTimer(!onRightWall, onRightWall, 0.1f));
+        }
+        StartCoroutine(SetCannotGoOnWallTimer(0.05f));
+        playerState = PlayerStates.InAir;
     }
 
     private IEnumerator WallClimb()
     {
         LeanTween.cancel(gameObject);
         playerState = PlayerStates.WallClimbing;
+        StartCoroutine(SetBanMoveTimer(onRightWall, !onRightWall, climbTime));
 
         yield return new WaitForSeconds(climbTime);
 
         if (playerState != PlayerStates.Vaulting)
         {
             playerState = PlayerStates.OnWall;
+            velocity.y = 0;
+            TweenWallSlideSpeed();
         }
-        
-        TweenWallSlideSpeed();
-        
     }
 
-    private IEnumerator WallJump()
+    private void WallJump()
     {
+        LeaveWall(true);
         additionalVelocity = wallJumpVelocity;
         additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
-
-        StartCoroutine(SetBanMoveTimer(!onRightWall, onRightWall, 0.1f));
-
-        playerState = PlayerStates.InAir;
-
-        canGoOnWall = false;
-        yield return new WaitForSeconds(0.1f);
-        canGoOnWall = true;
     }
 
     private IEnumerator SetCannotGoOnWallTimer(float timeSeconds)
