@@ -33,14 +33,6 @@ public class GrapplerMovement : MonoBehaviour
         playerMovementScript = GetComponent<PlayerMovement>();
     }
 
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.color = Color.greenYellow;
-    //    Gizmos.DrawCube(transform.position, new Vector2(leniency, maxDistance));
-    //    Gizmos.DrawRay(transform.position, directionalInput);
-        
-    //}
-
     public void SetGrappleDirectionalInput(InputAction.CallbackContext context)
     {
         directionalInput = context.ReadValue<Vector2>();

@@ -73,10 +73,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float climbTime = 0.1f;
     [SerializeField] private Vector2 wallJumpVelocity = new Vector2(10, 10);
 
+    [SerializeField] private float vaultTime = 0.25f;
+
     [Header("Extra Velocity")]
-    public Vector2 grapplerDirectionFromPrevPoint { get; private set; }
     [SerializeField] private float PGVxDecayFactor = 0.5f;
     [SerializeField] private float PGVyDecayFactor = 7f;
+    public Vector2 grapplerDirectionFromPrevPoint { get; private set; }
     #endregion
 
     private void Awake()
@@ -277,8 +279,8 @@ public class PlayerMovement : MonoBehaviour
                 onRightWall = rayRight ? true : false;
                 correctHit = onRightWall ? rayRight : rayLeft;
             }
-            
-            if (CheckForVault(correctHit, onRightWall))
+
+            if (CheckForVault(correctHit, onRightWall)) //CheckForVault() will call Vault() if it detects a hit
             {
                 return;
             }
@@ -316,7 +318,6 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D vaultHit = rb.Raycast(Vector2.zero, direction, wallBoxCastOffset + 0.5f, playerRaycastLayerMask);
         if (!vaultHit && wallHit.point.y <= rb.position.y)
         {
-            playerState = PlayerStates.Vaulting;
             StartCoroutine(Vault(hitOnRight, wallHit.point));
             return true;
         } else
@@ -537,25 +538,30 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator Vault(bool onRightWall, Vector2 hitPoint)
     {
-        velocity = Vector2.zero;
-        float yOffset = 0.5f - (transform.position.y - hitPoint.y);
-        Vector2 newPos;
-        if (onRightWall)
-        {
-            newPos = new Vector2(rb.position.x + 1, rb.position.y + 0.5f);
-        }
-        else
-        {
-            newPos = new Vector2(rb.position.x - 1, rb.position.y + 0.5f);
-        }
-        transform.position = newPos;
-        Vector2 offset = new Vector2(transform.position.x - rb.position.x, transform.position.y - rb.position.y);
-        Vector2 groundPoint = rb.Raycast(offset, Vector2.down, 2f, playerRaycastLayerMask).point;
-        groundPoint.y += 0.5f;
-        transform.position = groundPoint;
+        playerState = PlayerStates.Vaulting;
 
-        yield return new WaitForSeconds(0.5f);
-        playerState = PlayerStates.Grounded;
+        //Part 1: Move the player up
+        velocity = Vector2.zero;
+        float yOffset = 1f - (transform.position.y - hitPoint.y);
+        transform.position = new Vector2(transform.position.x, transform.position.y + yOffset);
+
+        yield return new WaitForSeconds(vaultTime / 2);
+
+        //Part 2: Move the player right/left
+        float newX = onRightWall ? transform.position.x + 1f : transform.position.x - 1f;
+        Vector2 newPos = new Vector2(newX, transform.position.y);
+
+        LeanTween.move(gameObject, newPos, vaultTime / 2)
+            .setOnUpdate((float nothing) =>
+            {
+                if (playerState != PlayerStates.Vaulting)
+                {
+                    print("cancelling move");
+                    LeanTween.cancel(gameObject);
+                }
+            });
+        yield return new WaitForSeconds(vaultTime / 2);
+        playerState = playerState == PlayerStates.Vaulting ? PlayerStates.Grounded : playerState;
     }
 
     #endregion
