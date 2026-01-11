@@ -292,8 +292,8 @@ public class GrapplerMovement : MonoBehaviour
 
     private bool TouchingGround()
     {
-        CapsuleCollider2D playerCollider = GetComponent<CapsuleCollider2D>();
-        Collider2D[] hitColliders = Physics2D.OverlapCapsuleAll(rb.position, playerCollider.size, playerCollider.direction, 0);
+        BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
+        Collider2D[] hitColliders = Physics2D.OverlapBoxAll(rb.position, playerCollider.size, 0);
 
         foreach (Collider2D collider in hitColliders)
         {

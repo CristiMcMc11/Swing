@@ -542,13 +542,13 @@ public class PlayerMovement : MonoBehaviour
 
         //Part 1: Move the player up
         velocity = Vector2.zero;
-        float yOffset = 1f - (transform.position.y - hitPoint.y);
+        float yOffset = groundBoxCastYOffset - (transform.position.y - hitPoint.y);
         transform.position = new Vector2(transform.position.x, transform.position.y + yOffset);
 
         yield return new WaitForSeconds(vaultTime / 2);
 
         //Part 2: Move the player right/left
-        float newX = onRightWall ? transform.position.x + 1f : transform.position.x - 1f;
+        float newX = onRightWall ? transform.position.x + wallBoxCastOffset * 2 : transform.position.x - wallBoxCastOffset * 2;
         Vector2 newPos = new Vector2(newX, transform.position.y);
 
         LeanTween.move(gameObject, newPos, vaultTime / 2)
