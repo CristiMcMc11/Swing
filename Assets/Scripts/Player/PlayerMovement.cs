@@ -191,10 +191,15 @@ public class PlayerMovement : MonoBehaviour
     private void CheckForGrounded()
     {
         Vector2 offset = new Vector2(0, -groundBoxCastYOffset);
+        Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
 
-        RaycastHit2D hitGround = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
+        RaycastHit2D hitGround = rb.BoxCast(offset, size, 0, Vector2.up, 1, playerRaycastLayerMask);
 
-        RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + CalculateRaycastExtraLength(velocity.y), playerRaycastLayerMask);
+        offset.y -= CalculateRaycastExtraLength(velocity.y);
+        size.y += CalculateRaycastExtraLength(velocity.y);
+
+        RaycastHit2D hitCenter = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
+        //RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + CalculateRaycastExtraLength(velocity.y), playerRaycastLayerMask);
 
         //print(((hitLeft || hitRight), playerState == PlayerStates.InAir, velocity.y <= 0));
 
