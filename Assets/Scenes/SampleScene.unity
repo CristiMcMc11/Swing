@@ -568,7 +568,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.52, y: -1.09, z: 0}
+  m_LocalPosition: {x: 1.03, y: 2.74, z: 0}
   m_LocalScale: {x: 0.8, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -598,11 +598,11 @@ MonoBehaviour:
   playerRaycastLayerMask:
     serializedVersion: 2
     m_Bits: 64
-  groundBoxCastLength: 0.7
+  groundBoxCastLength: 0.8
   groundBoxCastYOffset: 0.75
   groundRaycastDistance: 0.75
-  wallBoxCastOffset: 0.4
-  wallBoxCastSize: 0.8
+  wallBoxCastOffset: 0.45
+  wallBoxCastSize: 1.4
   walkSpeed: 8
   facingRight: 1
   maxJumpHeight: 4
@@ -612,12 +612,12 @@ MonoBehaviour:
   wallVelocity: 0
   canGoOnWall: 1
   isWallClimbing: 0
-  minSlideSpeed: 0.2
+  minSlideSpeed: 0.1
   maxSlideSpeed: 4
   slideSpeedTweenTime: 0.2
   climbHeight: 3
-  climbTime: 0.15
-  wallJumpVelocity: {x: 10, y: 100}
+  climbTime: 0.3
+  wallJumpVelocity: {x: 8, y: 100}
   vaultTime: 0.25
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
@@ -823,7 +823,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.9, y: 1}
   m_EdgeRadius: 0
 --- !u!1 &1209245805
 GameObject:

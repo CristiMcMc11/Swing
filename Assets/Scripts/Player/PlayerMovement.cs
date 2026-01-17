@@ -1,7 +1,8 @@
 using System;
 using System.Collections;
-using System.Drawing;
+//using System.Drawing;
 using Unity.VisualScripting;
+using UnityEditor.ShaderGraph;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -88,20 +89,36 @@ public class PlayerMovement : MonoBehaviour
         //Time.timeScale = 0.5f;
     }
 
-    private void Update()
+    private void OnDrawGizmos()
     {
+        Gizmos.color = Color.yellow;
 
+        Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset - CalculateRaycastExtraLength(velocity.y));
+        Vector2 size = new Vector2(groundBoxCastLength, 0.1f + CalculateRaycastExtraLength(velocity.y));
+        Gizmos.DrawWireCube(position, size);
+
+        size = new Vector2(0.1f, wallBoxCastSize);
+        Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
+        Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
+        Gizmos.DrawWireCube(rb.position + leftOffset, size);
+        Gizmos.DrawWireCube(rb.position + rightOffset, size);
     }
 
     private void FixedUpdate()
     {
         SetMoveSpeed();
-        CheckForWallTouch();
-        CheckForGrounded();
+        //CheckForWallTouch();
+        //CheckForGrounded();
         CheckForHeadhit();
         DecayAdditionalVelocity();
 
         ApplyMovement();
+    }
+
+    private void LateUpdate()
+    {
+        CheckForWallTouch(true);
+        CheckForGrounded();
     }
 
     public Vector2 GetVelocity()
@@ -179,10 +196,7 @@ public class PlayerMovement : MonoBehaviour
                 velocity.y = climbHeight / climbTime;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
-
         }
-        CheckForWallTouch();
-        CheckForGrounded();
     }
 
     #region Player States
@@ -230,13 +244,13 @@ public class PlayerMovement : MonoBehaviour
         float hitYCoord = hit.point.y;
 
         float yOffset = groundRaycastDistance - (rb.position.y - hitYCoord);
-        Vector3 newPosition = new Vector3(rb.position.x, rb.position.y + yOffset);
+        Vector3 newPosition = new Vector3(transform.position.x, rb.position.y + yOffset);
         transform.position = newPosition;
     }
 
     private float CalculateRaycastExtraLength(float velocity)
     {
-        return Mathf.Abs(velocity/50);
+        return Mathf.Abs(velocity/150);
     }
 
     //AIR
@@ -253,7 +267,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     //WALL
-    private void CheckForWallTouch()
+    private void CheckForWallTouch(bool requireInputTowardsWall)
     {
         Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
         Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
@@ -271,7 +285,7 @@ public class PlayerMovement : MonoBehaviour
         bool playerIsCorrectState = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwinging;
         bool playerHasCorrectDirectionalInput = ((hitLeft || rayLeft) && moveSpeed < 0) || ((hitRight || rayRight) && moveSpeed > 0);
 
-        if (wallIsHit && playerIsCorrectState && canGoOnWall && playerHasCorrectDirectionalInput) //General case (in the air)
+        if (wallIsHit && playerIsCorrectState && canGoOnWall) //General case (in the air)
         {
             RaycastHit2D correctHit;
             if (hitLeft || hitRight)
@@ -289,8 +303,12 @@ public class PlayerMovement : MonoBehaviour
             {
                 return;
             }
-
-            EnterWall(correctHit);
+            
+            if (playerHasCorrectDirectionalInput || !requireInputTowardsWall)
+            {
+                EnterWall(correctHit);
+            }
+            OffsetWallPlayerPosition(correctHit, onRightWall);
         }
         else if ((hitLeft || hitRight) && playerState == PlayerStates.WallClimbing) //Checking for a vault while wall climbing
         {
@@ -310,9 +328,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void OffsetWallPlayerPosition(RaycastHit2D hit, bool onTheRight)
     {
-        float xCoordinate = hit.point.x;
-        float playerXPos = onTheRight ? xCoordinate - wallBoxCastOffset : xCoordinate + wallBoxCastOffset;
-        Vector3 newPosition = new Vector3(playerXPos, rb.position.y);
+        Vector2 position = new Vector2(rb.position.x, hit.point.y);
+        Vector2 wallPoint = Physics2D.Raycast(position, onTheRight ? Vector2.right : Vector2.left, wallBoxCastOffset + CalculateRaycastExtraLength(velocity.x), playerRaycastLayerMask).point;
+        float newXCoord = onTheRight ? wallPoint.x - 0.4f : wallPoint.x + 0.4f;
+        Vector3 newPosition = new Vector3(newXCoord, rb.position.y);
         transform.position = newPosition;
     }
 
@@ -385,7 +404,7 @@ public class PlayerMovement : MonoBehaviour
         {
             velocity = Vector2.zero;
             additionalVelocity = grapplerMovementScript.CancelGrapplePull();
-            CheckForWallTouch();
+            CheckForWallTouch(false);
         }
     }
 
@@ -479,7 +498,6 @@ public class PlayerMovement : MonoBehaviour
     {
         playerState = PlayerStates.OnWall;
         TweenWallSlideSpeed();
-        OffsetWallPlayerPosition(correctHit, onRightWall);
     }
 
     private void LeaveWall(bool wallJump)
