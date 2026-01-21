@@ -289,7 +289,7 @@ public class PlayerMovement : MonoBehaviour
     private void OffsetGroundPlayerPosition(RaycastHit2D hit)
     {
         Vector2 pos = new Vector2(hit.point.x, transform.position.y);
-        float hitYCoord = Physics2D.Raycast(pos, Vector2.down, transform.position.y - hit.point.y, playerRaycastLayerMask).point.y;
+        float hitYCoord = Physics2D.Raycast(pos, Vector2.down, transform.position.y - hit.point.y + 0.1f, playerRaycastLayerMask).point.y;
 
         float yOffset = groundRaycastDistance - (rb.position.y - hitYCoord);
         Vector3 newPosition = new Vector3(transform.position.x, rb.position.y + yOffset);
