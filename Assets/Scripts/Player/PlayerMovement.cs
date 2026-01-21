@@ -58,6 +58,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float maxJumpHeight = 5f;
     [SerializeField] private float maxJumpTime = 1f; 
     [SerializeField] private float terminalVelocity = -20;
+    [SerializeField] private float banWallAfterJumpTimeSec = 0.2f;
     public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
     public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
 
@@ -222,7 +223,6 @@ public class PlayerMovement : MonoBehaviour
         }
         else if (!groundedHit && !wallHit && playerState == PlayerStates.Grounded)
         {
-            print("setting in air");
             playerState = PlayerStates.InAir;
         }
         else if (groundedHit && playerState == PlayerStates.InAir && velocity.y < 0)
@@ -309,7 +309,6 @@ public class PlayerMovement : MonoBehaviour
 
         if (hit && velocity.y > 0)
         {
-            print("headhit");
             velocity.y = 0;
             additionalVelocity.y = 0;
         }
@@ -391,6 +390,7 @@ public class PlayerMovement : MonoBehaviour
         {
             playerState = PlayerStates.InAir;
             velocity.y += value * jumpForce;
+            StartCoroutine(SetCannotGoOnWallTimer(banWallAfterJumpTimeSec));
         }
         else if (!keyPressed && playerState == PlayerStates.InAir) //let go of jump
         {
@@ -592,7 +592,6 @@ public class PlayerMovement : MonoBehaviour
             {
                 if (playerState != PlayerStates.Vaulting)
                 {
-                    print("cancelling move");
                     LeanTween.cancel(gameObject);
                 }
             });
