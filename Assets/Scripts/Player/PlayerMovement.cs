@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-//using System.Drawing;
+using System.Drawing;
 using Unity.VisualScripting;
 using UnityEditor.ShaderGraph;
 using UnityEngine;
@@ -91,10 +91,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.yellow;
+        Gizmos.color = UnityEngine.Color.yellow;
 
-        Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset - CalculateRaycastExtraLength(velocity.y));
-        Vector2 size = new Vector2(groundBoxCastLength, 0.1f + CalculateRaycastExtraLength(velocity.y));
+        Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
+        Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
         Gizmos.DrawWireCube(position, size);
 
         size = new Vector2(0.1f, wallBoxCastSize);
@@ -102,6 +102,9 @@ public class PlayerMovement : MonoBehaviour
         Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
         Gizmos.DrawWireCube(rb.position + leftOffset, size);
         Gizmos.DrawWireCube(rb.position + rightOffset, size);
+
+        Vector2 offset = new Vector2(0, groundBoxCastYOffset);
+        Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
     }
 
     private void FixedUpdate()
@@ -117,8 +120,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void LateUpdate()
     {
-        CheckForWallTouch(true);
-        CheckForGrounded();
+        FindPlayerState(true);
+        //CheckForWallTouch(true);
+        //CheckForGrounded();
     }
 
     public Vector2 GetVelocity()
@@ -201,47 +205,91 @@ public class PlayerMovement : MonoBehaviour
 
     #region Player States
 
+
+    private void FindPlayerState(bool requireWallCorrectDirectionalInput)
+    {
+        RaycastHit2D groundedHit = CheckForGrounded();
+        RaycastHit2D leftWallHit = CheckForWallTouch(true);
+        RaycastHit2D rightWallHit = CheckForWallTouch(false);
+
+        bool wallHit = leftWallHit || rightWallHit;
+        bool playerIsCorrectState = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwinging;
+        bool playerHasCorrectDirectionalInput = (leftWallHit && moveSpeed < 0) || (rightWallHit && moveSpeed > 0);
+
+        if (groundedHit && wallHit)
+        {
+            OnWallAndGroundHit(groundedHit, leftWallHit, rightWallHit, playerHasCorrectDirectionalInput);
+        }
+        else if (!groundedHit && !wallHit && playerState == PlayerStates.Grounded)
+        {
+            print("setting in air");
+            playerState = PlayerStates.InAir;
+        }
+        else if (groundedHit && playerState == PlayerStates.InAir && velocity.y < 0)
+        {
+            BecomeGrounded(groundedHit);
+        }
+        else if (wallHit && !groundedHit && playerIsCorrectState && (playerHasCorrectDirectionalInput || !requireWallCorrectDirectionalInput) && canGoOnWall)
+        {
+            OnWallHit(leftWallHit, rightWallHit);
+        }
+        else if (wallHit && playerState == PlayerStates.WallClimbing) //Checking for a vault while wall climbing
+        {
+            onRightWall = rightWallHit ? true : false;
+            RaycastHit2D correctHit = onRightWall ? rightWallHit : leftWallHit;
+            CheckForVault(correctHit, onRightWall);
+        }
+        else if (playerState == PlayerStates.OnWall && ((onRightWall && moveSpeed < 0) || (!onRightWall && moveSpeed > 0))) //checking whether input doesn't match the wall direction
+        {
+            LeaveWall(false);
+        }
+        else if (!wallHit && playerState == PlayerStates.OnWall) //fell off the wall
+        {
+            LeaveWall(false);
+        }
+    }
+
+    private void OnWallAndGroundHit(RaycastHit2D groundHit, RaycastHit2D leftWallHit, RaycastHit2D rightWallHit, bool playerHasCorrectDirectionalInput)
+    {
+        if (leftWallHit && rightWallHit)
+        {
+            BecomeGrounded(groundHit);
+        }
+        else if ((groundHit.point.x > transform.position.x && rightWallHit) || (groundHit.point.x < transform.position.x && leftWallHit))
+        {
+            if (playerState == PlayerStates.InAir && playerHasCorrectDirectionalInput)
+            {
+                OnWallHit(leftWallHit, rightWallHit);
+            }
+        }
+        else if (Mathf.Round(groundHit.point.x * 100) == Mathf.Round(rb.position.x * 100) && (playerState == PlayerStates.OnWall || (playerState == PlayerStates.InAir && velocity.y < 0)))
+            //if groundhit.point.x is basically equal to rb.pos.x AND (playerState is onWall OR (player state is inAir AND moving downwards))
+        {
+            BecomeGrounded(groundHit);
+        }
+    }
+
     //GROUNDED
-    private void CheckForGrounded()
+    private RaycastHit2D CheckForGrounded()
     {
         Vector2 offset = new Vector2(0, -groundBoxCastYOffset);
         Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
 
         RaycastHit2D hitGround = rb.BoxCast(offset, size, 0, Vector2.up, 1, playerRaycastLayerMask);
+        return hitGround;
+    }
 
-        offset.y -= CalculateRaycastExtraLength(velocity.y);
-        size.y += CalculateRaycastExtraLength(velocity.y);
-
-        RaycastHit2D hitCenter = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
-        //RaycastHit2D hitCenter = rb.Raycast(Vector2.zero, Vector2.down, groundRaycastDistance + CalculateRaycastExtraLength(velocity.y), playerRaycastLayerMask);
-
-        //print(((hitLeft || hitRight), playerState == PlayerStates.InAir, velocity.y <= 0));
-
-        if (hitGround && velocity.y < 0)
-        {
-            playerState = PlayerStates.Grounded;
-            velocity.y = 0;
-            OffsetGroundPlayerPosition(hitCenter);
-        }
-        else if (hitGround && playerState == PlayerStates.GrappleSwinging)
-        {
-            playerState = PlayerStates.Grounded;
-            velocity.y = 0;
-            OffsetGroundPlayerPosition(hitCenter);
-        }
-        else if (hitCenter && playerState == PlayerStates.InAir && velocity.y < 0)
-        {
-            OffsetGroundPlayerPosition(hitCenter);
-        }
-        else if (!hitGround && playerState == PlayerStates.Grounded)
-        {
-            playerState = PlayerStates.InAir;
-        }
+    private void BecomeGrounded(RaycastHit2D hitGround)
+    {
+        playerState = PlayerStates.Grounded;
+        velocity.y = 0;
+        OffsetGroundPlayerPosition(hitGround);
     }
 
     private void OffsetGroundPlayerPosition(RaycastHit2D hit)
     {
-        float hitYCoord = hit.point.y;
+        Vector2 pos = new Vector2(hit.point.x, transform.position.y);
+        float hitYCoord = Physics2D.Raycast(pos, Vector2.down, transform.position.y - hit.point.y, playerRaycastLayerMask).point.y;
 
         float yOffset = groundRaycastDistance - (rb.position.y - hitYCoord);
         Vector3 newPosition = new Vector3(transform.position.x, rb.position.y + yOffset);
@@ -250,24 +298,25 @@ public class PlayerMovement : MonoBehaviour
 
     private float CalculateRaycastExtraLength(float velocity)
     {
-        return Mathf.Abs(velocity/150);
+        return Mathf.Abs(velocity * Time.fixedDeltaTime);
     }
 
     //AIR
     private void CheckForHeadhit()
     {
         Vector2 offset = new Vector2(0, groundBoxCastYOffset);
-        RaycastHit2D hit = rb.BoxCast(Vector2.zero, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
+        RaycastHit2D hit = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
 
         if (hit && velocity.y > 0)
         {
+            print("headhit");
             velocity.y = 0;
             additionalVelocity.y = 0;
         }
     }
 
     //WALL
-    private void CheckForWallTouch(bool requireInputTowardsWall)
+    private RaycastHit2D CheckForWallTouch(bool returnHitLeft)
     {
         Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
         Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
@@ -276,54 +325,23 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D hitLeft = rb.BoxCast(leftOffset, size, 0, Vector2.zero, 1, playerRaycastLayerMask);
         RaycastHit2D hitRight = rb.BoxCast(rightOffset, size, 0, Vector2.zero, 1, playerRaycastLayerMask);
 
-        float extraLength = CalculateRaycastExtraLength(velocity.x);
-        RaycastHit2D rayLeft = rb.Raycast(Vector2.zero, Vector2.left, leftOffset.magnitude + extraLength, playerRaycastLayerMask);
-        RaycastHit2D rayRight = rb.Raycast(Vector2.zero, Vector2.right, rightOffset.magnitude + extraLength, playerRaycastLayerMask);
+        return returnHitLeft ? hitLeft : hitRight;
+    }
 
+    private void OnWallHit(RaycastHit2D hitLeft, RaycastHit2D hitRight)
+    {
+        RaycastHit2D correctHit;
+        onRightWall = hitRight ? true : false;
+        correctHit = onRightWall ? hitRight : hitLeft;
 
-        bool wallIsHit = hitLeft || hitRight || rayLeft || rayRight;
-        bool playerIsCorrectState = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwinging;
-        bool playerHasCorrectDirectionalInput = ((hitLeft || rayLeft) && moveSpeed < 0) || ((hitRight || rayRight) && moveSpeed > 0);
+        if (CheckForVault(correctHit, onRightWall)) //CheckForVault() will call Vault() if it detects a hit
+        {
+            return;
+        }
 
-        if (wallIsHit && playerIsCorrectState && canGoOnWall) //General case (in the air)
-        {
-            RaycastHit2D correctHit;
-            if (hitLeft || hitRight)
-            {
-                onRightWall = hitRight ? true : false;
-                correctHit = onRightWall ? hitRight : hitLeft;
-            }
-            else
-            {
-                onRightWall = rayRight ? true : false;
-                correctHit = onRightWall ? rayRight : rayLeft;
-            }
-
-            if (CheckForVault(correctHit, onRightWall)) //CheckForVault() will call Vault() if it detects a hit
-            {
-                return;
-            }
-            
-            if (playerHasCorrectDirectionalInput || !requireInputTowardsWall)
-            {
-                EnterWall(correctHit);
-            }
-            OffsetWallPlayerPosition(correctHit, onRightWall);
-        }
-        else if ((hitLeft || hitRight) && playerState == PlayerStates.WallClimbing) //Checking for a vault while wall climbing
-        {
-            onRightWall = hitRight ? true : false;
-            RaycastHit2D correctHit = onRightWall ? hitRight : hitLeft;
-            CheckForVault(correctHit, onRightWall);
-        }
-        else if (playerState == PlayerStates.OnWall && ((onRightWall && moveSpeed < 0) || (!onRightWall && moveSpeed > 0))) //checking whether input doesn't match the wall direction
-        {
-            LeaveWall(false);
-        }
-        else if (!(hitLeft || hitRight) && playerState == PlayerStates.OnWall) //fell off the wall
-        {
-            LeaveWall(false);
-        }
+        OffsetWallPlayerPosition(correctHit, onRightWall);
+        playerState = PlayerStates.OnWall;
+        TweenWallSlideSpeed();
     }
 
     private void OffsetWallPlayerPosition(RaycastHit2D hit, bool onTheRight)
@@ -340,6 +358,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector2 direction = hitOnRight ? Vector2.right : Vector2.left;
         RaycastHit2D vaultHit = rb.Raycast(Vector2.zero, direction, wallBoxCastOffset + 0.5f, playerRaycastLayerMask);
+
         if (!vaultHit && wallHit.point.y <= rb.position.y)
         {
             StartCoroutine(Vault(hitOnRight, wallHit.point));
@@ -404,7 +423,7 @@ public class PlayerMovement : MonoBehaviour
         {
             velocity = Vector2.zero;
             additionalVelocity = grapplerMovementScript.CancelGrapplePull();
-            CheckForWallTouch(false);
+            FindPlayerState(false);
         }
     }
 
@@ -492,12 +511,6 @@ public class PlayerMovement : MonoBehaviour
         {
             WallJump();
         }
-    }
-
-    private void EnterWall(RaycastHit2D correctHit)
-    {
-        playerState = PlayerStates.OnWall;
-        TweenWallSlideSpeed();
     }
 
     private void LeaveWall(bool wallJump)
