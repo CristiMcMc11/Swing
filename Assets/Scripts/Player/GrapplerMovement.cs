@@ -7,6 +7,7 @@ public class GrapplerMovement : MonoBehaviour
 {
     private Rigidbody2D rb;
     private PlayerMovement playerMovementScript;
+    [SerializeField] private Vector2 hitTerrainRaycastSize;
 
     [Header("Grappler Swing Runtime")]
     [SerializeField] private Vector2 directionalInput;
@@ -26,6 +27,12 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private float maxThrowTime = 0.5f;
     [SerializeField] private float pullSpeed = 5f;
 
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.azure;
+        Gizmos.DrawWireCube(transform.position, hitTerrainRaycastSize);
+    }
 
     private void Awake()
     {
@@ -116,6 +123,7 @@ public class GrapplerMovement : MonoBehaviour
     {
         if (CheckGrappleWallHit(angleToMove))
         {
+            print("hit the wall");
             grappleSpeed = 0;
             angleToMove = 0;
         }
@@ -293,11 +301,13 @@ public class GrapplerMovement : MonoBehaviour
     private bool TouchingGround()
     {
         BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
-        Collider2D[] hitColliders = Physics2D.OverlapBoxAll(rb.position, playerCollider.size, 0);
+        Vector2 size = new Vector2(playerCollider.size.x, playerCollider.size.y * 1.5f);
+        Collider2D[] hitColliders = Physics2D.OverlapBoxAll(rb.position, hitTerrainRaycastSize, 0);
 
-        foreach (Collider2D collider in hitColliders)
+        foreach (Collider2D hit in hitColliders)
         {
-            if (collider.gameObject.layer == LayerMask.NameToLayer("Terrain"))
+            print(hit.gameObject);
+            if (hit.gameObject.layer == LayerMask.NameToLayer("Terrain"))
             {
                 return true;
             }

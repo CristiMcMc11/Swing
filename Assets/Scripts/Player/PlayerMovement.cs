@@ -106,6 +106,9 @@ public class PlayerMovement : MonoBehaviour
 
         Vector2 offset = new Vector2(0, groundBoxCastYOffset);
         Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+
+        //offset = new Vector2(0, groundBoxCastYOffset);
+        //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
     }
 
     private void FixedUpdate()
@@ -305,10 +308,11 @@ public class PlayerMovement : MonoBehaviour
     private void CheckForHeadhit()
     {
         Vector2 offset = new Vector2(0, groundBoxCastYOffset);
-        RaycastHit2D hit = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 1, playerRaycastLayerMask);
+        RaycastHit2D hit = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 0, playerRaycastLayerMask);
 
         if (hit && velocity.y > 0)
         {
+            print("headhit");
             velocity.y = 0;
             additionalVelocity.y = 0;
         }
