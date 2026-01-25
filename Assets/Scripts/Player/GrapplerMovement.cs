@@ -20,12 +20,14 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private float speedEquationFactor;
     [SerializeField] private bool movingRight = true;
     [SerializeField] private bool canHitWall = true;
+    [SerializeField] private bool inStillHang = false;
 
     [Header("Grappler Settables")]
     [SerializeField] private float maxDistance = 20;
     [SerializeField] private float leniency = 5f;
     [SerializeField] private float maxThrowTime = 0.5f;
     [SerializeField] private float pullSpeed = 5f;
+    [SerializeField] private float grappleEntrySpeedThreshold = 0.05f;
 
 
     private void OnDrawGizmos()
@@ -110,8 +112,6 @@ public class GrapplerMovement : MonoBehaviour
         playerMovementScript.playerState = PlayerMovement.PlayerStates.GrappleSwinging;
     } 
 
-    
-
     /// <summary>
     /// Calculates the point the player should move to next while grapple swinging.
     /// </summary>
@@ -127,6 +127,12 @@ public class GrapplerMovement : MonoBehaviour
             grappleSpeed = 0;
             angleToMove = 0;
         }
+
+        if (inStillHang)
+        {
+            angleToMove = 0;
+        }
+
         angleToMove *= Time.fixedDeltaTime;
 
         Vector2 prevPoint = rb.position;
@@ -188,6 +194,18 @@ public class GrapplerMovement : MonoBehaviour
 
         float angleSpeedRad = speed / radius;
         angleSpeedRad = playerVelocity.x >= 0 ? angleSpeedRad : -angleSpeedRad;
+
+        print(angleSpeedRad);
+        if (Mathf.Abs(angleSpeedRad) < grappleEntrySpeedThreshold)
+        {
+            angleSpeedRad = 0;
+            inStillHang = true;
+        }
+        else
+        {
+            inStillHang = false;
+        }
+
         return angleSpeedRad;
     }
 
@@ -252,6 +270,7 @@ public class GrapplerMovement : MonoBehaviour
 
         //If the player is on the right, add gravityAngleSpeed. If the player is on the left, subtract gravityAngleSpeed
         grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
+
         return grappleSpeed;
     }
 
@@ -306,7 +325,6 @@ public class GrapplerMovement : MonoBehaviour
 
         foreach (Collider2D hit in hitColliders)
         {
-            print(hit.gameObject);
             if (hit.gameObject.layer == LayerMask.NameToLayer("Terrain"))
             {
                 return true;

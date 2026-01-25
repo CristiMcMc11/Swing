@@ -205,8 +205,8 @@ Transform:
   m_GameObject: {fileID: 413507777}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.2985, y: -3.04, z: 0}
-  m_LocalScale: {x: 20.66751, y: 1.7626688, z: 1}
+  m_LocalPosition: {x: -7.47, y: 5.835, z: 0}
+  m_LocalScale: {x: 10.519924, y: 0.9227572, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -568,7 +568,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.03, y: 2.74, z: 0}
+  m_LocalPosition: {x: -6.96, y: 0.98, z: 0}
   m_LocalScale: {x: 0.8, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -608,6 +608,7 @@ MonoBehaviour:
   maxJumpHeight: 4
   maxJumpTime: 1
   terminalVelocity: -50
+  banWallAfterJumpTimeSec: 0.2
   onRightWall: 0
   wallVelocity: 0
   canGoOnWall: 1
@@ -766,6 +767,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b451c04f12ee4d46a9cb9b4a33809ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovement
+  hitTerrainRaycastSize: {x: 0.8, y: 1.5}
   directionalInput: {x: 0, y: 0}
   grapplePointDistance: 0
   grapplePoint: {x: 0, y: 0}
@@ -1095,8 +1097,8 @@ Transform:
   m_GameObject: {fileID: 1948969600}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5.0464783, y: 4, z: 1}
+  m_LocalPosition: {x: -11.48, y: -1.78, z: 0}
+  m_LocalScale: {x: 11.335904, y: 4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
