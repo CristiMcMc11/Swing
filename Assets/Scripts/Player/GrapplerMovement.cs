@@ -15,7 +15,7 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private Vector2 grapplePoint;
 
     [SerializeField] private Vector2 directionFromPrevPoint;
-    [SerializeField] private float grappleSpeed;
+    [SerializeField] public float grappleSpeed; //MAKE GET; PRIVATE SET
     [SerializeField] private float originalAngleSpeed;
     [SerializeField] private float speedEquationFactor;
     [SerializeField] private bool movingRight = true;

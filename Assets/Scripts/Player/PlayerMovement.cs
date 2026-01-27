@@ -23,12 +23,20 @@ public class PlayerMovement : MonoBehaviour
         Vaulting
     }
 
+    public enum PlayerDirection
+    {
+        Left,
+        Right
+    }
+
     //References
     private Rigidbody2D rb;
     private GrapplerMovement grapplerMovementScript;
 
     [Header("Runtime")]
     public PlayerStates playerState  = PlayerStates.Grounded;
+    [SerializeField] PlayerDirection playerDirection = PlayerDirection.Right;
+
     [SerializeField] private Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
 
@@ -120,6 +128,7 @@ public class PlayerMovement : MonoBehaviour
         DecayAdditionalVelocity();
 
         ApplyMovement();
+        FindAndApplyDirection();
     }
 
     private void LateUpdate()
@@ -207,8 +216,29 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    #region Player States
+    private void FindAndApplyDirection()
+    {
+        if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
+        {
+            if (velocity.x < 0)
+            {
+                playerDirection = PlayerDirection.Left;
+            }
+            else if (velocity.x > 0)
+            {
+                playerDirection = PlayerDirection.Right;
+            }
+        }
+        if (playerState == PlayerStates.GrappleSwinging)
+        {
+            playerDirection = grapplerMovementScript.grappleSpeed < 0 ? PlayerDirection.Left : PlayerDirection.Right;
+        }
 
+        int yRotation = playerDirection == PlayerDirection.Left ? 180 : 0;
+        transform.rotation = Quaternion.Euler(transform.rotation.x, yRotation, transform.rotation.z);
+    }
+
+    #region Player States
 
     private void FindPlayerState(bool requireWallCorrectDirectionalInput)
     {
