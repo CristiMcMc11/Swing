@@ -205,8 +205,8 @@ Transform:
   m_GameObject: {fileID: 413507777}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.47, y: 5.835, z: 0}
-  m_LocalScale: {x: 10.519924, y: 0.9227572, z: 1}
+  m_LocalPosition: {x: 0.51, y: -1.3735, z: 0}
+  m_LocalScale: {x: 2.371191, y: 12.428166, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -568,7 +568,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.96, y: 0.98, z: 0}
+  m_LocalPosition: {x: -11.9, y: 0.26, z: 0}
   m_LocalScale: {x: 0.8, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -607,7 +607,7 @@ MonoBehaviour:
   facingRight: 1
   maxJumpHeight: 4
   maxJumpTime: 1
-  terminalVelocity: -50
+  terminalVelocity: -20
   banWallAfterJumpTimeSec: 0.2
   onRightWall: 0
   wallVelocity: 0
@@ -777,10 +777,13 @@ MonoBehaviour:
   speedEquationFactor: 0
   movingRight: 1
   canHitWall: 1
+  inStillHang: 0
+  maxSpeed: 4
   maxDistance: 20
   leniency: 5
   maxThrowTime: 0.5
   pullSpeed: 20
+  grappleEntrySpeedThreshold: 0.05
 --- !u!61 &1152884647
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -959,8 +962,8 @@ Transform:
   m_GameObject: {fileID: 1209245805}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7, y: 0.7064, z: 0}
-  m_LocalScale: {x: 1.8651363, y: 10.249704, z: 1}
+  m_LocalPosition: {x: -4.58, y: 1.88, z: 0}
+  m_LocalScale: {x: 2.9528968, y: 1.2970407, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1097,8 +1100,8 @@ Transform:
   m_GameObject: {fileID: 1948969600}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -11.48, y: -1.78, z: 0}
-  m_LocalScale: {x: 11.335904, y: 4, z: 1}
+  m_LocalPosition: {x: -12.11, y: -2.03, z: 0}
+  m_LocalScale: {x: 3.1627173, y: 2.7236, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}

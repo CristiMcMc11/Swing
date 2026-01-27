@@ -312,7 +312,6 @@ public class PlayerMovement : MonoBehaviour
 
         if (hit && velocity.y > 0)
         {
-            print("headhit");
             velocity.y = 0;
             additionalVelocity.y = 0;
         }

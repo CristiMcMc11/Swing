@@ -24,6 +24,7 @@ public class GrapplerMovement : MonoBehaviour
 
     [Header("Grappler Settables")]
     [SerializeField] private float maxDistance = 20;
+
     [SerializeField] private float leniency = 5f;
     [SerializeField] private float maxThrowTime = 0.5f;
     [SerializeField] private float pullSpeed = 5f;
@@ -123,12 +124,13 @@ public class GrapplerMovement : MonoBehaviour
     {
         if (CheckGrappleWallHit(angleToMove))
         {
-            print("hit the wall");
-            grappleSpeed = 0;
             angleToMove = 0;
         }
-
-        if (inStillHang)
+        else if (!canHitWall)
+        {
+            grappleSpeed = 0;
+        }
+        else if (inStillHang)
         {
             angleToMove = 0;
         }
@@ -271,6 +273,7 @@ public class GrapplerMovement : MonoBehaviour
         //If the player is on the right, add gravityAngleSpeed. If the player is on the left, subtract gravityAngleSpeed
         grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
 
+        print(grappleSpeed);
         return grappleSpeed;
     }
 
