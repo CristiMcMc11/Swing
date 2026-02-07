@@ -35,7 +35,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Runtime")]
     public PlayerStates playerState  = PlayerStates.Grounded;
-    [SerializeField] PlayerDirection playerDirection = PlayerDirection.Right;
+    public PlayerDirection playerDirection = PlayerDirection.Right; //SET GET; PRIVATE SET
 
     [SerializeField] private Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
@@ -98,26 +98,26 @@ public class PlayerMovement : MonoBehaviour
         //Time.timeScale = 0.5f;
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = UnityEngine.Color.yellow;
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = UnityEngine.Color.yellow;
 
-        Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
-        Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
-        Gizmos.DrawWireCube(position, size);
+    //    Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
+    //    Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
+    //    Gizmos.DrawWireCube(position, size);
 
-        size = new Vector2(0.1f, wallBoxCastSize);
-        Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
-        Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
-        Gizmos.DrawWireCube(rb.position + leftOffset, size);
-        Gizmos.DrawWireCube(rb.position + rightOffset, size);
+    //    size = new Vector2(0.1f, wallBoxCastSize);
+    //    Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
+    //    Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
+    //    Gizmos.DrawWireCube(rb.position + leftOffset, size);
+    //    Gizmos.DrawWireCube(rb.position + rightOffset, size);
 
-        Vector2 offset = new Vector2(0, groundBoxCastYOffset);
-        Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+    //    Vector2 offset = new Vector2(0, groundBoxCastYOffset);
+    //    Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
 
-        //offset = new Vector2(0, groundBoxCastYOffset);
-        //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
-    }
+    //    //offset = new Vector2(0, groundBoxCastYOffset);
+    //    //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+    //}
 
     private void FixedUpdate()
     {

@@ -8,6 +8,7 @@ public class GrapplerMovement : MonoBehaviour
     private Rigidbody2D rb;
     private PlayerMovement playerMovementScript;
     [SerializeField] private Vector2 hitTerrainRaycastSize;
+    public GameObject grappleHead;
 
     [Header("Grappler Swing Runtime")]
     [SerializeField] private Vector2 directionalInput;
@@ -53,12 +54,33 @@ public class GrapplerMovement : MonoBehaviour
         int layerMask = LayerMask.GetMask("Terrain");
         bool grappleHit = true;
 
-        grapplePoint = FindGrapplePoint(ref grappleHit);
+        if (directionalInput == Vector2.zero)
+        {
+            directionalInput = playerMovementScript.playerDirection == PlayerMovement.PlayerDirection.Right ? Vector2.right : Vector2.left;
+        }
+
+        grapplePoint = FindGrapplePoint(ref grappleHit, directionalInput);
         float tempDistance = Vector2.Distance(rb.position, grapplePoint);
         float time = CalculateGrappleThrowTime(tempDistance, grappleHit);
 
         //animation for throwing grapple
-        yield return new WaitForSeconds(time);
+
+        grappleHead.SetActive(true);
+        grappleHead.transform.position = transform.position;
+        grappleHead.LeanMove(grapplePoint, time)
+            .setOnComplete(() =>
+            {
+                if (!grappleHit)
+                {
+                    grappleHead.LeanMove(transform.position, time)
+                    .setOnComplete(() =>
+                    {
+                        grappleHead.SetActive(false);
+                    });
+                }
+            });
+
+        yield return new WaitForSeconds(grappleHit ? time : time*2);
 
         grapplePointDistance = Vector2.Distance(rb.position, grapplePoint);
 
@@ -75,7 +97,7 @@ public class GrapplerMovement : MonoBehaviour
 
     #region Raycasting
 
-    private Vector2 FindGrapplePoint(ref bool grappleHit)
+    private Vector2 FindGrapplePoint(ref bool grappleHit, Vector2 directionalInput)
     {
         LayerMask layerMask = playerMovementScript.playerRaycastLayerMask;
 
@@ -99,7 +121,8 @@ public class GrapplerMovement : MonoBehaviour
 
         //3. Both missed and the grapple misses
         grappleHit = false;
-        return Vector2.zero;
+        print((directionalInput, directionalInput * maxDistance));
+        return rb.position + directionalInput * maxDistance;
     }
 
     #endregion
