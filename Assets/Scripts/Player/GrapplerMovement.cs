@@ -19,9 +19,12 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] public float grappleSpeed; //MAKE GET; PRIVATE SET
     [SerializeField] private float originalAngleSpeed;
     [SerializeField] private float speedEquationFactor;
+
     [SerializeField] private bool movingRight = true;
     [SerializeField] private bool canHitWall = true;
     [SerializeField] private bool inStillHang = false;
+
+    public bool grapplePullOnStartGrappling = false;
 
     [Header("Grappler Settables")]
     [SerializeField] private float maxDistance = 20;
@@ -86,7 +89,15 @@ public class GrapplerMovement : MonoBehaviour
 
         if (grappleHit)
         {
-            StartGrappleSwinging();
+            if (grapplePullOnStartGrappling)
+            {
+                StartGrapplePulling();
+                grapplePullOnStartGrappling = false;
+            }
+            else
+            {
+                StartGrappleSwinging();
+            }
         }
         else
         {

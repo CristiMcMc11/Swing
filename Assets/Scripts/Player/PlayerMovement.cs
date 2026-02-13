@@ -439,7 +439,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    public void Grapple(InputAction.CallbackContext context)
+    public void OnGrappleInput(InputAction.CallbackContext context)
     {
         bool keyPressed = context.ReadValue<float>() == 1;
 
@@ -451,6 +451,32 @@ public class PlayerMovement : MonoBehaviour
         else if (keyPressed && playerState == PlayerStates.GrappleSwinging)
         {
             grapplerMovementScript.StartGrapplePulling();
+        }
+        else if (!keyPressed && playerState == PlayerStates.GrapplePulling)
+        {
+            velocity = Vector2.zero;
+            additionalVelocity = grapplerMovementScript.CancelGrapplePull();
+            FindPlayerState(false);
+        }
+    }
+
+    public void OnGrapplePullInput(InputAction.CallbackContext context)
+    {
+        bool keyPressed = context.ReadValue<float>() == 1;
+
+        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall))
+        {
+            playerState = PlayerStates.GrappleThrow;
+            StartCoroutine(grapplerMovementScript.GrappleThrowCoroutine());
+            grapplerMovementScript.grapplePullOnStartGrappling = true;
+        }
+        else if (keyPressed && playerState == PlayerStates.GrappleSwinging)
+        {
+            grapplerMovementScript.StartGrapplePulling();
+        }
+        else if (keyPressed && playerState == PlayerStates.GrappleThrow)
+        {
+            grapplerMovementScript.grapplePullOnStartGrappling = true;
         }
         else if (!keyPressed && playerState == PlayerStates.GrapplePulling)
         {
