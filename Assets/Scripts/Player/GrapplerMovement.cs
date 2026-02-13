@@ -121,7 +121,6 @@ public class GrapplerMovement : MonoBehaviour
 
         //3. Both missed and the grapple misses
         grappleHit = false;
-        print((directionalInput, directionalInput * maxDistance));
         return rb.position + directionalInput * maxDistance;
     }
 
@@ -131,7 +130,7 @@ public class GrapplerMovement : MonoBehaviour
 
     private void StartGrappleSwinging()
     {
-        grappleSpeed = InitialVelocityToAngleSpeed(playerMovementScript.GetVelocity(), FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance), grapplePointDistance);
+        grappleSpeed = InitialVelocityToAngleSpeed(playerMovementScript.GetVelocity(), grapplePointDistance, FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance));
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
         playerMovementScript.playerState = PlayerMovement.PlayerStates.GrappleSwinging;
     } 
@@ -212,15 +211,15 @@ public class GrapplerMovement : MonoBehaviour
         playerAngleRad = playerAngleRad % Mathf.PI; //Angle must be between 0 and pi for equations to work
 
         float speed = 0;
-        print((playerAngleRad * Mathf.Rad2Deg, (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1), (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2))));
 
         speed += Mathf.Abs(playerVelocity.x * (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1));
         speed += Mathf.Abs(playerVelocity.y * (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2)));
 
-        float angleSpeedRad = speed / radius;
+        print((FindCurrentPlayerAngleRad(grapplePoint, radius) * Mathf.Rad2Deg, (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1), (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2)), speed / (1 + radius), radius, playerMovementScript.GetVelocity()));
+
+        float angleSpeedRad = speed / (1+radius);
         angleSpeedRad = playerVelocity.x >= 0 ? angleSpeedRad : -angleSpeedRad;
 
-        print(angleSpeedRad);
         if (Mathf.Abs(angleSpeedRad) < grappleEntrySpeedThreshold)
         {
             angleSpeedRad = 0;
@@ -296,7 +295,6 @@ public class GrapplerMovement : MonoBehaviour
         //If the player is on the right, add gravityAngleSpeed. If the player is on the left, subtract gravityAngleSpeed
         grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
 
-        print(grappleSpeed);
         return grappleSpeed;
     }
 
