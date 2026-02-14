@@ -363,8 +363,8 @@ Camera:
     height: 1
   near clip plane: 0.1
   far clip plane: 5000
-  field of view: 40
-  orthographic: 1
+  field of view: 67.9
+  orthographic: 0
   orthographic size: 8.3161955
   m_Depth: -1
   m_CullingMask:
@@ -720,8 +720,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 48e93eef0688c4a259cb0eddcd8661f7, type: 3}
-  m_Color: {r: 0.556889, g: 1, b: 0.4481132, a: 1}
+  m_Sprite: {fileID: -6390529120596566494, guid: 0fde806b1ab017c41872f4b1c70d50a5, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -740,8 +740,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -11.9, y: 0.26, z: 0}
-  m_LocalScale: {x: 0.8, y: 1.5, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -771,10 +771,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   groundBoxCastLength: 0.8
-  groundBoxCastYOffset: 0.75
-  groundRaycastDistance: 0.75
-  wallBoxCastOffset: 0.45
-  wallBoxCastSize: 1.4
+  groundBoxCastYOffset: 0.9
+  groundRaycastDistance: 0.9
+  wallBoxCastOffset: 0.4
+  wallBoxCastSize: 1.8
   walkSpeed: 8
   facingRight: 1
   maxJumpHeight: 4
@@ -882,7 +882,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1152884642}
         m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
-        m_MethodName: Grapple
+        m_MethodName: OnGrappleInput
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -922,6 +922,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 431d22d0-11fc-49ab-b033-02448966a08d
     m_ActionName: 'Movement/Grapple Directional Input[/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1152884642}
+        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
+        m_MethodName: OnGrapplePullInput
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: af69b08d-f63d-4d76-8609-e4b904c1cd84
+    m_ActionName: 'Movement/Grapple Pull[/Keyboard/r]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Movement
@@ -951,6 +967,7 @@ MonoBehaviour:
   movingRight: 1
   canHitWall: 1
   inStillHang: 0
+  grapplePullOnStartGrappling: 0
   maxDistance: 8
   leniency: 1
   maxThrowTime: 0.1
@@ -994,13 +1011,13 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
+    oldSize: {x: 1.0266666, y: 1.8933333}
     newSize: {x: 1, y: 2}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.8, y: 1.8}
   m_EdgeRadius: 0
 --- !u!1 &1209245805
 GameObject:
@@ -1134,8 +1151,8 @@ Transform:
   m_GameObject: {fileID: 1209245805}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.54, y: 4.45, z: 0}
-  m_LocalScale: {x: 2.9528968, y: 5.983618, z: 1}
+  m_LocalPosition: {x: -5.54, y: 1.91, z: 0}
+  m_LocalScale: {x: 2.9528968, y: 11.063709, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1213,7 +1230,7 @@ MonoBehaviour:
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
-    FieldOfView: 40
+    FieldOfView: 67.9
     OrthographicSize: 8.3161955
     NearClipPlane: 0.1
     FarClipPlane: 5000

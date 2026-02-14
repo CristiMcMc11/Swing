@@ -226,7 +226,7 @@ public class GrapplerMovement : MonoBehaviour
         speed += Mathf.Abs(playerVelocity.x * (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1));
         speed += Mathf.Abs(playerVelocity.y * (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2)));
 
-        print((FindCurrentPlayerAngleRad(grapplePoint, radius) * Mathf.Rad2Deg, (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1), (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2)), speed / (1 + radius), radius, playerMovementScript.GetVelocity()));
+        //print((FindCurrentPlayerAngleRad(grapplePoint, radius) * Mathf.Rad2Deg, (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1), (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2)), speed / (1 + radius), radius, playerMovementScript.GetVelocity()));
 
         float angleSpeedRad = speed / (1+radius);
         angleSpeedRad = playerVelocity.x >= 0 ? angleSpeedRad : -angleSpeedRad;
@@ -343,6 +343,7 @@ public class GrapplerMovement : MonoBehaviour
 
         if (!TouchingGround())
         {
+            print("not touching ground");
             Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
             exitVelocity = directionToGrapplePoint * pullSpeed;
         }
