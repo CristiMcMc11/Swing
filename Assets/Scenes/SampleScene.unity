@@ -205,8 +205,8 @@ Transform:
   m_GameObject: {fileID: 413507777}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.51, y: -2.0773, z: 0}
-  m_LocalScale: {x: 2.371191, y: 2.3594708, z: 1}
+  m_LocalPosition: {x: 11.822, y: -2.0773, z: 0}
+  m_LocalScale: {x: 24.995197, y: 2.3594708, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -348,12 +348,12 @@ Camera:
   m_ShutterSpeed: 0.005
   m_Aperture: 16
   m_FocusDistance: 10
-  m_FocalLength: 50
+  m_FocalLength: 8.001
   m_BladeCount: 5
   m_Curvature: {x: 2, y: 11}
   m_BarrelClipping: 0.25
   m_Anamorphism: 0
-  m_SensorSize: {x: 36, y: 24}
+  m_SensorSize: {x: 21.946, y: 16.002}
   m_LensShift: {x: 0, y: 0}
   m_NormalizedViewPortRect:
     serializedVersion: 2
@@ -363,7 +363,7 @@ Camera:
     height: 1
   near clip plane: 0.1
   far clip plane: 5000
-  field of view: 67.9
+  field of view: 90
   orthographic: 0
   orthographic size: 8.3161955
   m_Depth: -1
@@ -664,6 +664,7 @@ GameObject:
   - component: {fileID: 1152884643}
   - component: {fileID: 1152884645}
   - component: {fileID: 1152884647}
+  - component: {fileID: 1152884648}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -773,7 +774,7 @@ MonoBehaviour:
   groundBoxCastLength: 0.8
   groundBoxCastYOffset: 0.9
   groundRaycastDistance: 0.9
-  wallBoxCastOffset: 0.4
+  wallBoxCastOffset: 0.45
   wallBoxCastSize: 1.8
   walkSpeed: 8
   facingRight: 1
@@ -1019,6 +1020,28 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.8, y: 1.8}
   m_EdgeRadius: 0
+--- !u!95 &1152884648
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1152884637}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: a753ea9cf1832b04f87522653b72a667, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1209245805
 GameObject:
   m_ObjectHideFlags: 0
@@ -1230,7 +1253,7 @@ MonoBehaviour:
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
-    FieldOfView: 67.9
+    FieldOfView: 90
     OrthographicSize: 8.3161955
     NearClipPlane: 0.1
     FarClipPlane: 5000

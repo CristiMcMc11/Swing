@@ -1,11 +1,7 @@
-using System;
 using System.Collections;
-using System.Drawing;
-using Unity.VisualScripting;
-using UnityEditor.ShaderGraph;
+//using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Rendering;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -15,12 +11,12 @@ public class PlayerMovement : MonoBehaviour
     {
         Grounded,
         InAir,
-        GrappleThrow,
-        GrappleSwinging,
-        GrapplePulling,
         OnWall,
         WallClimbing,
-        Vaulting
+        Vaulting,
+        GrappleThrow,
+        GrappleSwinging,
+        GrapplePulling
     }
 
     public enum PlayerDirection
@@ -89,12 +85,16 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float PGVxDecayFactor = 0.5f;
     [SerializeField] private float PGVyDecayFactor = 7f;
     public Vector2 grapplerDirectionFromPrevPoint { get; private set; }
+
+    [Header("Animation")]
+    private Animator animator;
     #endregion
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         grapplerMovementScript = GetComponent<GrapplerMovement>();
+        animator = GetComponent<Animator>();
         //Time.timeScale = 0.5f;
     }
 
@@ -134,8 +134,7 @@ public class PlayerMovement : MonoBehaviour
     private void LateUpdate()
     {
         FindPlayerState(true);
-        //CheckForWallTouch(true);
-        //CheckForGrounded();
+        SetAnimatorParameters();
     }
 
     public Vector2 GetVelocity()
@@ -238,6 +237,13 @@ public class PlayerMovement : MonoBehaviour
         transform.rotation = Quaternion.Euler(transform.rotation.x, yRotation, transform.rotation.z);
     }
 
+    private void SetAnimatorParameters()
+    {
+        animator.SetInteger("PlayerState", ((int)playerState));
+        animator.SetBool("Moving", moveSpeed != 0);
+        animator.SetBool("Falling", velocity.y < 0);
+    }
+
     #region Player States
 
     private void FindPlayerState(bool requireWallCorrectDirectionalInput)
@@ -281,7 +287,7 @@ public class PlayerMovement : MonoBehaviour
             LeaveWall(false);
         }
 
-        print((playerState, transform.position));
+        //print((playerState, transform.position));
     }
 
     private void OnWallAndGroundHit(RaycastHit2D groundHit, RaycastHit2D leftWallHit, RaycastHit2D rightWallHit, bool playerHasCorrectDirectionalInput)
@@ -316,8 +322,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void BecomeGrounded(RaycastHit2D hitGround)
     {
-        playerState = PlayerStates.Grounded;
         velocity.y = 0;
+        playerState = PlayerStates.Grounded;
         OffsetGroundPlayerPosition(hitGround);
     }
 
