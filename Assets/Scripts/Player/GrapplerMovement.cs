@@ -216,6 +216,11 @@ public class GrapplerMovement : MonoBehaviour
     #endregion
 
     #region Grappler Swing Calculations
+    public float GrappleRotationDeg()
+    {
+        float rotation = FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance) * Mathf.Rad2Deg + 90;
+        return rotation;
+    }
 
     private float InitialVelocityToAngleSpeed(Vector2 playerVelocity, float radius, float playerAngleRad)
     {
@@ -349,6 +354,7 @@ public class GrapplerMovement : MonoBehaviour
         }
 
         playerMovementScript.playerState = PlayerMovement.PlayerStates.InAir;
+        transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
         exitVelocity.y *= 2;
         return exitVelocity;
     }
@@ -356,7 +362,7 @@ public class GrapplerMovement : MonoBehaviour
     private bool TouchingGround()
     {
         BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
-        Vector2 size = new Vector2(playerCollider.size.x, playerCollider.size.y * 1.5f);
+        Vector2 size = new Vector2(playerCollider.size.x, playerCollider.size.y);
         Collider2D[] hitColliders = Physics2D.OverlapBoxAll(rb.position, hitTerrainRaycastSize, 0);
 
         foreach (Collider2D hit in hitColliders)

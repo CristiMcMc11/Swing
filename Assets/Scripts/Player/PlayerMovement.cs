@@ -81,6 +81,8 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private float vaultTime = 0.25f;
 
+    public bool disableVault = false;
+
     [Header("Extra Velocity")]
     [SerializeField] private float PGVxDecayFactor = 0.5f;
     [SerializeField] private float PGVyDecayFactor = 7f;
@@ -127,8 +129,8 @@ public class PlayerMovement : MonoBehaviour
         CheckForHeadhit();
         DecayAdditionalVelocity();
 
+        FindRotations();
         ApplyMovement();
-        FindAndApplyDirection();
     }
 
     private void LateUpdate()
@@ -195,6 +197,10 @@ public class PlayerMovement : MonoBehaviour
                 Vector2 newPosition = grapplerMovementScript.GrappleSwingMovement();
                 rb.MovePosition(newPosition);
 
+                //rb.MoveRotation(grapplerMovementScript.GrappleSwingRotation());
+                //transform.rotation = new Quaternion(transform.rotation.x, transform.rotation.y, grapplerMovementScript.GrappleSwingRotation(), transform.rotation.w);
+                //rb.MoveRotation(grapplerMovementScript.GrappleSwingRotation());
+
                 grapplerDirectionFromPrevPoint = (newPosition - prevPoint).normalized;
                 break;
 
@@ -215,7 +221,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void FindAndApplyDirection()
+    private void FindRotations()
     {
         if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
         {
@@ -228,13 +234,23 @@ public class PlayerMovement : MonoBehaviour
                 playerDirection = PlayerDirection.Right;
             }
         }
+
+        float zRotation = 0;
         if (playerState == PlayerStates.GrappleSwinging)
         {
             playerDirection = grapplerMovementScript.grappleSpeed < 0 ? PlayerDirection.Left : PlayerDirection.Right;
+            zRotation = grapplerMovementScript.GrappleRotationDeg();
+            zRotation = playerDirection == PlayerDirection.Right ? zRotation : -zRotation;
+        }
+        else if (playerState == PlayerStates.GrapplePulling)
+        {
+            zRotation = grapplerMovementScript.GrappleRotationDeg();
+            zRotation = playerDirection == PlayerDirection.Right ? zRotation : -zRotation;
         }
 
         int yRotation = playerDirection == PlayerDirection.Left ? 180 : 0;
-        transform.rotation = Quaternion.Euler(transform.rotation.x, yRotation, transform.rotation.z);
+        rb.rotation = zRotation;
+        transform.rotation = Quaternion.Euler(0, yRotation, rb.rotation);
     }
 
     private void SetAnimatorParameters()
@@ -324,6 +340,7 @@ public class PlayerMovement : MonoBehaviour
     {
         velocity.y = 0;
         playerState = PlayerStates.Grounded;
+        transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
         OffsetGroundPlayerPosition(hitGround);
     }
 
@@ -396,6 +413,8 @@ public class PlayerMovement : MonoBehaviour
     //VAULT
     private bool CheckForVault(RaycastHit2D wallHit, bool hitOnRight)
     {
+        if (disableVault) { return false; }
+
         Vector2 direction = hitOnRight ? Vector2.right : Vector2.left;
         RaycastHit2D vaultHit = rb.Raycast(Vector2.zero, direction, wallBoxCastOffset + 0.5f, playerRaycastLayerMask);
 
@@ -675,6 +694,7 @@ public class PlayerMovement : MonoBehaviour
         playerState = PlayerStates.InAir;
         additionalVelocity = grapplerMovementScript.SetPostGrappleVelocity();
         velocity = additionalVelocity;
+        transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
     }
 
     #endregion
