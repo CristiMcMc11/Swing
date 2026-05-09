@@ -1,7 +1,10 @@
 using System.Collections;
+using System.Security.Cryptography;
+
 //using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Splines.Interpolators;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -36,6 +39,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
 
+    [SerializeField] private float accelerationValue;
+    private int accelerationTweenId;
+
     [SerializeField] private Vector2 playerDirectionalInput = Vector2.zero;
     [SerializeField] private Vector2 playerMoveInput = Vector2.zero;
 
@@ -57,6 +63,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Ground")]
     [SerializeField] private float walkSpeed = 10;
     [SerializeField] private bool facingRight = true;
+    [SerializeField] private float accelerationTime = 0.5f;
 
     [Header("Jumping")]
     [SerializeField] private float maxJumpHeight = 5f;
@@ -65,6 +72,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float banWallAfterJumpTimeSec = 0.2f;
     public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
     public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
+
 
     [Header("Wall")]
     [SerializeField] private bool onRightWall;
@@ -146,7 +154,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void SetMoveSpeed()
     {
-        moveSpeed = walkSpeed * playerMoveInput.x;
+        moveSpeed = walkSpeed * accelerationValue;
         
         if (banMoveLeft && moveSpeed < 0 || banMoveRight && moveSpeed > 0)
         {
@@ -258,6 +266,35 @@ public class PlayerMovement : MonoBehaviour
         animator.SetInteger("PlayerState", ((int)playerState));
         animator.SetBool("Moving", moveSpeed != 0);
         animator.SetBool("Falling", velocity.y < 0);
+    }
+
+    private void StartAcceleration(float playerMoveInput)
+    {
+        LeanTween.cancel(accelerationTweenId);
+
+        if (playerMoveInput == 0)
+        {
+            accelerationTweenId = LeanTween.value(accelerationValue, 0, Mathf.Abs(accelerationValue) * accelerationTime)
+                .setEaseOutQuad()
+                .setOnUpdate((float val) =>
+                {
+                    print("deccelerating");
+                    accelerationValue = val;
+                }).id;
+        }
+
+        else
+        {
+            print(accelerationTime - accelerationValue / accelerationTime);
+            accelerationTweenId = LeanTween.value(accelerationValue, 1, accelerationTime - Mathf.Abs(accelerationValue) * accelerationTime)
+                .setEaseOutQuad()
+                .setOnUpdate((float val) =>
+                {
+                    print("accelerating");
+                    accelerationValue = playerMoveInput < 0 ? -val : val;
+                }).id;
+        }
+
     }
 
     #region Player States
@@ -439,6 +476,7 @@ public class PlayerMovement : MonoBehaviour
     public void OnMove(InputAction.CallbackContext context)
     {
         playerMoveInput = context.ReadValue<Vector2>();
+        StartAcceleration(playerMoveInput.x);
     }
 
     public void OnJump(InputAction.CallbackContext context)
@@ -576,7 +614,8 @@ public class PlayerMovement : MonoBehaviour
             additionalVelocity.x = additionalVelocity.x < 0 ? Mathf.Min(additionalVelocity.x + PGVxDecayFactor, 0) : Mathf.Max(additionalVelocity.x - PGVxDecayFactor, 0);
             if ((moveSpeed < 0 && additionalVelocity.x > 0) || (moveSpeed > 0 && additionalVelocity.x < 0))
             {
-                additionalVelocity.x = 0;
+                //Time.timeScale = 0.25f;
+                additionalVelocity.x += moveSpeed;
             }
 
             //postGrappleVelocity = new Vector2(Mathf.Max(postGrappleVelocity.x, 0), Mathf.Max(postGrappleVelocity.y, 0));
@@ -692,7 +731,7 @@ public class PlayerMovement : MonoBehaviour
     public void JumpOutOfGrapple()
     {
         playerState = PlayerStates.InAir;
-        additionalVelocity = grapplerMovementScript.SetPostGrappleVelocity();
+        additionalVelocity = grapplerMovementScript.SetPostGrappleVelocity() * 5;
         velocity = additionalVelocity;
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
     }
