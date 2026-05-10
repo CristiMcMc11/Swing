@@ -50,6 +50,7 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private bool playerCannotMove = false;
     [SerializeField] private float moveSpeed;
+    [SerializeField] private float horizontalSpeed;
 
     [Header("Raycasting")]
     public LayerMask playerRaycastLayerMask;
@@ -131,9 +132,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        SetMoveSpeed();
         //CheckForWallTouch();
         //CheckForGrounded();
+        SetMoveSpeed();
         CheckForHeadhit();
         DecayAdditionalVelocity();
 
@@ -154,12 +155,42 @@ public class PlayerMovement : MonoBehaviour
 
     private void SetMoveSpeed()
     {
-        moveSpeed = walkSpeed * accelerationValue;
-        
-        if (banMoveLeft && moveSpeed < 0 || banMoveRight && moveSpeed > 0)
+        if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
+        {
+            moveSpeed = walkSpeed * accelerationValue;
+            if (banMoveLeft && moveSpeed < 0 || banMoveRight && moveSpeed > 0)
+            {
+                moveSpeed = 0;
+            }
+        }
+        else
         {
             moveSpeed = 0;
-        } 
+        }
+    }
+
+    private void SetHorizontalSpeed(bool canMoveHorizontally)
+    {
+        if (!canMoveHorizontally)
+        {
+            StopAcceleration();
+            horizontalSpeed = 0;
+            return;
+        }
+
+        if (additionalVelocity.x == 0)
+        {
+            if (playerDirectionalInput.x != 0 && accelerationValue == 0)
+            {
+                StartAcceleration(playerDirectionalInput.x);
+            }
+
+            horizontalSpeed = walkSpeed * accelerationValue;
+        }
+        else
+        {
+            horizontalSpeed = additionalVelocity.x;
+        }
     }
 
     private IEnumerator SetBanMoveTimer(bool leftBan, bool rightBan, float timeSec)
@@ -181,14 +212,17 @@ public class PlayerMovement : MonoBehaviour
         {
             case PlayerStates.Grounded:
                 //Get horizontal input to move but don't use gravity
-                velocity.x = moveSpeed;
+                SetHorizontalSpeed(true);
+                velocity.x = horizontalSpeed;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
             case PlayerStates.InAir:
                 //Use gravity and horizontal input
                 ApplyGravity();
-                ApplyAdditionalVelocity();
+                SetHorizontalSpeed(true);
+                ApplyAdditionalVerticalVelocity();
+                velocity.x = horizontalSpeed;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -219,6 +253,7 @@ public class PlayerMovement : MonoBehaviour
             case PlayerStates.OnWall:
                 velocity.x = 0;
                 velocity.y = wallVelocity;
+                SetHorizontalSpeed(false);
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -275,26 +310,49 @@ public class PlayerMovement : MonoBehaviour
         if (playerMoveInput == 0)
         {
             accelerationTweenId = LeanTween.value(accelerationValue, 0, Mathf.Abs(accelerationValue) * accelerationTime)
-                .setEaseOutQuad()
+                //.setEaseOutQuad()
                 .setOnUpdate((float val) =>
                 {
-                    print("deccelerating");
                     accelerationValue = val;
                 }).id;
         }
 
+        else if (playerMoveInput < 0 && moveSpeed > 0 || playerMoveInput > 0 && moveSpeed < 0)
+        {
+            accelerationTweenId = LeanTween.value(accelerationValue, 0, (Mathf.Abs(accelerationValue) * accelerationTime)/4)
+                //.setEaseOutQuad()
+                .setOnUpdate((float val) =>
+                {
+                    accelerationValue = val;
+                })
+                .setOnComplete(() =>
+                {
+                    accelerationTweenId = LeanTween.value(accelerationValue, 1, (accelerationTime - Mathf.Abs(accelerationValue) * accelerationTime)/4)
+                    .setEaseOutQuad()
+                    .setOnUpdate((float val) =>
+                    {
+                        accelerationValue = playerMoveInput < 0 ? -val : val;
+                    }).id;
+                }).id;
+            
+        }
+
         else
         {
-            print(accelerationTime - accelerationValue / accelerationTime);
+            //print(accelerationTime - accelerationValue / accelerationTime);
             accelerationTweenId = LeanTween.value(accelerationValue, 1, accelerationTime - Mathf.Abs(accelerationValue) * accelerationTime)
                 .setEaseOutQuad()
                 .setOnUpdate((float val) =>
                 {
-                    print("accelerating");
                     accelerationValue = playerMoveInput < 0 ? -val : val;
                 }).id;
         }
+    }
 
+    private void StopAcceleration()
+    {
+        LeanTween.cancel(accelerationTweenId);
+        accelerationValue = 0;
     }
 
     #region Player States
@@ -476,7 +534,11 @@ public class PlayerMovement : MonoBehaviour
     public void OnMove(InputAction.CallbackContext context)
     {
         playerMoveInput = context.ReadValue<Vector2>();
-        StartAcceleration(playerMoveInput.x);
+
+        if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
+        {
+            StartAcceleration(playerMoveInput.x);
+        }
     }
 
     public void OnJump(InputAction.CallbackContext context)
@@ -565,38 +627,9 @@ public class PlayerMovement : MonoBehaviour
         velocity.y = Mathf.Max(velocity.y, terminalVelocity);
     }
 
-    private void ApplyAdditionalVelocity()
+    private void ApplyAdditionalVerticalVelocity()
     {
         velocity.y += additionalVelocity.y;
-
-        if (additionalVelocity.x == 0)
-        {
-            velocity.x = moveSpeed;
-            return;
-        }
-
-        if (moveSpeed == 0)
-        {
-            velocity.x = additionalVelocity.x;
-            return;
-        }
-
-        bool inputOpposingVelocity = (moveSpeed < 0 && additionalVelocity.x > 0) || (moveSpeed > 0 && additionalVelocity.x < 0);  
-        if (inputOpposingVelocity)
-        {
-            velocity.x = moveSpeed;
-        }
-        else
-        {
-            if (playerMoveInput.x > 0)
-            {
-                velocity.x = Mathf.Max(moveSpeed, additionalVelocity.x);
-            }
-            else if (playerMoveInput.x < 0)
-            {
-                velocity.x = Mathf.Min(moveSpeed, additionalVelocity.x);
-            }
-        }
     }
 
     private void DecayAdditionalVelocity()
@@ -612,10 +645,12 @@ public class PlayerMovement : MonoBehaviour
             additionalVelocity.y = additionalVelocity.y < 0.01f ? 0 : additionalVelocity.y;
 
             additionalVelocity.x = additionalVelocity.x < 0 ? Mathf.Min(additionalVelocity.x + PGVxDecayFactor, 0) : Mathf.Max(additionalVelocity.x - PGVxDecayFactor, 0);
-            if ((moveSpeed < 0 && additionalVelocity.x > 0) || (moveSpeed > 0 && additionalVelocity.x < 0))
+            if ((playerDirectionalInput.x < 0 && additionalVelocity.x > 0) || (playerDirectionalInput.x > 0 && additionalVelocity.x < 0))
             {
-                //Time.timeScale = 0.25f;
-                additionalVelocity.x += moveSpeed;
+                //Time.timeScale = 0.25f; 
+                additionalVelocity.x += accelerationValue;
+                //StopAcceleration();
+                //print("decaying velocity");
             }
 
             //postGrappleVelocity = new Vector2(Mathf.Max(postGrappleVelocity.x, 0), Mathf.Max(postGrappleVelocity.y, 0));
@@ -668,6 +703,14 @@ public class PlayerMovement : MonoBehaviour
     private void WallJump()
     {
         LeaveWall(true);
+        //StopAcceleration();
+
+        if (playerDirectionalInput.x != 0)
+        {
+            StartAcceleration(playerDirectionalInput.x);
+            Time.timeScale = 0.25f;
+        }
+        //StartAcceleration(playerMoveInput.x);
         additionalVelocity = wallJumpVelocity;
         additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
     }
@@ -731,7 +774,7 @@ public class PlayerMovement : MonoBehaviour
     public void JumpOutOfGrapple()
     {
         playerState = PlayerStates.InAir;
-        additionalVelocity = grapplerMovementScript.SetPostGrappleVelocity() * 5;
+        additionalVelocity = grapplerMovementScript.SetPostGrappleVelocity();
         velocity = additionalVelocity;
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
     }
