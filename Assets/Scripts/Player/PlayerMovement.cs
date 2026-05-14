@@ -39,9 +39,6 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
 
-    [SerializeField] private float accelerationValue;
-    private int accelerationTweenId;
-
     [SerializeField] private Vector2 playerDirectionalInput = Vector2.zero;
     [SerializeField] private Vector2 playerMoveInput = Vector2.zero;
 
@@ -64,7 +61,6 @@ public class PlayerMovement : MonoBehaviour
     [Header("Ground")]
     [SerializeField] private float walkSpeed = 10;
     [SerializeField] private bool facingRight = true;
-    [SerializeField] private float accelerationTime = 0.5f;
 
     [Header("Jumping")]
     [SerializeField] private float maxJumpHeight = 5f;
@@ -74,6 +70,12 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
     public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
 
+    [Header("Acceleration")]
+    [SerializeField] private float accelerationTime = 0.5f; //time to get to walkSpeed
+    [SerializeField] private float airResistance = 1f; //units a second;
+    [SerializeField] private bool instantAccelerate = false;
+    [SerializeField] private float accelerationValue;
+    private int accelerationTweenId;
 
     [Header("Wall")]
     [SerializeField] private bool onRightWall;
@@ -137,7 +139,7 @@ public class PlayerMovement : MonoBehaviour
         SetMoveSpeed();
         CheckForHeadhit();
         DecayAdditionalVelocity();
-
+        SetVelocity();
         FindRotations();
         ApplyMovement();
     }
@@ -202,6 +204,95 @@ public class PlayerMovement : MonoBehaviour
         banMoveRight = rightBan ? false : banMoveRight;
     }
 
+    private void AddForce(Vector2 force, bool resetVelocityBefore)
+    {
+        velocity = resetVelocityBefore ? Vector2.zero : velocity;
+        velocity += force;
+    }
+
+    private void SetVelocity()
+    {
+        float accelerationRate = (walkSpeed / accelerationTime) * Time.fixedDeltaTime;
+        if (instantAccelerate) {
+            accelerationRate = Mathf.Max(velocity.x, walkSpeed);
+        }
+
+        switch (playerState)
+        {
+            case PlayerStates.Grounded:
+                if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x))
+                {
+                    velocity.x -= accelerationRate * Mathf.Sign(velocity.x) * 2;
+                }
+                else if (playerDirectionalInput.x > 0)
+                {
+                    velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
+                }
+                else if (playerDirectionalInput.x < 0)
+                {
+                    velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
+                }
+                else if (playerDirectionalInput.x == 0)
+                {
+                    if (velocity.x != 0)
+                    {
+                        velocity.x = velocity.x > 0 ? Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed) : Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
+                    }
+                }
+                break;
+
+            case PlayerStates.InAir:
+                ApplyGravity();
+
+                if (Mathf.Abs(velocity.x) > walkSpeed)
+                {
+                    velocity.x -= airResistance * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
+
+                    if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x))
+                    {
+                        velocity.x -= accelerationRate * Mathf.Sign(velocity.x);
+                    }
+                }
+                else
+                {
+                    if (playerDirectionalInput.x > 0)
+                    {
+                        velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
+                    }
+                    else if (playerDirectionalInput.x < 0)
+                    {
+                        velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
+                    }
+                    else if (playerDirectionalInput.x == 0)
+                    {
+                        if (velocity.x != 0)
+                        {
+                            velocity.x = velocity.x > 0 ? Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed) : Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
+                        }
+                    }
+                }
+                    break;
+
+            //case PlayerStates.GrappleThrow:
+            //    //Gravity but no horizontal input
+            //    ApplyGravity();
+            //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+            //    break;
+
+            case PlayerStates.OnWall:
+                velocity.x = 0;
+                velocity.y = wallVelocity;
+                SetHorizontalSpeed(false);
+                rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                break;
+
+                //case PlayerStates.WallClimbing:
+                //    velocity.y = climbHeight / climbTime;
+                //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                //    break;
+        }
+    }
+
     /// <summary>
     /// Applies the changes in velocity through code to the player's position in the scene. This is applied differently for each playerState
     /// </summary>
@@ -212,17 +303,17 @@ public class PlayerMovement : MonoBehaviour
         {
             case PlayerStates.Grounded:
                 //Get horizontal input to move but don't use gravity
-                SetHorizontalSpeed(true);
-                velocity.x = horizontalSpeed;
+                //SetHorizontalSpeed(true);
+                //velocity.x = horizontalSpeed;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
             case PlayerStates.InAir:
                 //Use gravity and horizontal input
-                ApplyGravity();
-                SetHorizontalSpeed(true);
-                ApplyAdditionalVerticalVelocity();
-                velocity.x = horizontalSpeed;
+                
+                //SetHorizontalSpeed(true);
+                //ApplyAdditionalVerticalVelocity();
+                //velocity.x = horizontalSpeed;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -251,9 +342,9 @@ public class PlayerMovement : MonoBehaviour
                 break;
 
             case PlayerStates.OnWall:
-                velocity.x = 0;
-                velocity.y = wallVelocity;
-                SetHorizontalSpeed(false);
+                //velocity.x = 0;
+                //velocity.y = wallVelocity;
+                //SetHorizontalSpeed(false);
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -299,7 +390,7 @@ public class PlayerMovement : MonoBehaviour
     private void SetAnimatorParameters()
     {
         animator.SetInteger("PlayerState", ((int)playerState));
-        animator.SetBool("Moving", moveSpeed != 0);
+        animator.SetBool("Moving", velocity.x != 0);
         animator.SetBool("Falling", velocity.y < 0);
     }
 
@@ -365,7 +456,7 @@ public class PlayerMovement : MonoBehaviour
 
         bool wallHit = leftWallHit || rightWallHit;
         bool playerIsCorrectState = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwinging;
-        bool playerHasCorrectDirectionalInput = (leftWallHit && moveSpeed < 0) || (rightWallHit && moveSpeed > 0);
+        bool playerHasCorrectDirectionalInput = (leftWallHit && playerDirectionalInput.x < 0) || (rightWallHit && playerDirectionalInput.x > 0);
 
         if (groundedHit && wallHit)
         {
@@ -537,7 +628,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
         {
-            StartAcceleration(playerMoveInput.x);
+            //StartAcceleration(playerMoveInput.x);
         }
     }
 
@@ -582,7 +673,7 @@ public class PlayerMovement : MonoBehaviour
         else if (!keyPressed && playerState == PlayerStates.GrapplePulling)
         {
             velocity = Vector2.zero;
-            additionalVelocity = grapplerMovementScript.CancelGrapplePull();
+            AddForce(grapplerMovementScript.CancelGrapplePull() / 1.2f, true);
             FindPlayerState(false);
         }
     }
@@ -608,7 +699,7 @@ public class PlayerMovement : MonoBehaviour
         else if (!keyPressed && playerState == PlayerStates.GrapplePulling)
         {
             velocity = Vector2.zero;
-            additionalVelocity = grapplerMovementScript.CancelGrapplePull();
+            AddForce(grapplerMovementScript.CancelGrapplePull() / 1.2f, true);
             FindPlayerState(false);
         }
     }
@@ -708,11 +799,12 @@ public class PlayerMovement : MonoBehaviour
         if (playerDirectionalInput.x != 0)
         {
             StartAcceleration(playerDirectionalInput.x);
-            Time.timeScale = 0.25f;
         }
         //StartAcceleration(playerMoveInput.x);
-        additionalVelocity = wallJumpVelocity;
-        additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
+        //additionalVelocity = wallJumpVelocity;
+        //additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
+        Vector2 velocity = playerDirection == PlayerDirection.Right ? new Vector2(-wallJumpVelocity.x, wallJumpVelocity.y) : wallJumpVelocity;
+        AddForce(velocity, false);
     }
 
     private IEnumerator SetCannotGoOnWallTimer(float timeSeconds)
@@ -774,8 +866,8 @@ public class PlayerMovement : MonoBehaviour
     public void JumpOutOfGrapple()
     {
         playerState = PlayerStates.InAir;
-        additionalVelocity = grapplerMovementScript.SetPostGrappleVelocity();
-        velocity = additionalVelocity;
+        Vector2 grappleTransferVelocity = grapplerMovementScript.SetPostGrappleVelocity();
+        AddForce(grappleTransferVelocity, true);
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
     }
 
