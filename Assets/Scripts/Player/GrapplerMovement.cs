@@ -350,7 +350,7 @@ public class GrapplerMovement : MonoBehaviour
         {
             print("not touching ground");
             Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
-            exitVelocity = directionToGrapplePoint.normalized * pullSpeed;
+            exitVelocity = directionToGrapplePoint * pullSpeed;
         }
 
         playerMovementScript.playerState = PlayerMovement.PlayerStates.InAir;

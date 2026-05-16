@@ -61,6 +61,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Ground")]
     [SerializeField] private float walkSpeed = 10;
     [SerializeField] private bool facingRight = true;
+    [SerializeField] private Vector2 newPos = Vector2.zero;
 
     [Header("Jumping")]
     [SerializeField] private float maxJumpHeight = 5f;
@@ -220,7 +221,7 @@ public class PlayerMovement : MonoBehaviour
         switch (playerState)
         {
             case PlayerStates.Grounded:
-                if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x))
+                if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x) && playerDirectionalInput.x != 0)
                 {
                     velocity.x -= accelerationRate * Mathf.Sign(velocity.x) * 2;
                 }
@@ -234,9 +235,13 @@ public class PlayerMovement : MonoBehaviour
                 }
                 else if (playerDirectionalInput.x == 0)
                 {
-                    if (velocity.x != 0)
+                    if (velocity.x > 0)
                     {
-                        velocity.x = velocity.x > 0 ? Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed) : Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
+                        velocity.x = Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed);
+                    }
+                    else if (velocity.x < 0)
+                    {
+                        velocity.x = Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
                     }
                 }
                 break;
@@ -305,16 +310,18 @@ public class PlayerMovement : MonoBehaviour
                 //Get horizontal input to move but don't use gravity
                 //SetHorizontalSpeed(true);
                 //velocity.x = horizontalSpeed;
-                rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                newPos = rb.position + velocity * Time.fixedDeltaTime;
+                rb.MovePosition(newPos);
                 break;
 
             case PlayerStates.InAir:
                 //Use gravity and horizontal input
-                
+
                 //SetHorizontalSpeed(true);
                 //ApplyAdditionalVerticalVelocity();
                 //velocity.x = horizontalSpeed;
-                rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                newPos = rb.position + velocity * Time.fixedDeltaTime;
+                rb.MovePosition(newPos);
                 break;
 
             case PlayerStates.GrappleThrow:
@@ -430,7 +437,6 @@ public class PlayerMovement : MonoBehaviour
 
         else
         {
-            //print(accelerationTime - accelerationValue / accelerationTime);
             accelerationTweenId = LeanTween.value(accelerationValue, 1, accelerationTime - Mathf.Abs(accelerationValue) * accelerationTime)
                 .setEaseOutQuad()
                 .setOnUpdate((float val) =>
@@ -488,8 +494,6 @@ public class PlayerMovement : MonoBehaviour
         {
             LeaveWall(false);
         }
-
-        //print((playerState, transform.position));
     }
 
     private void OnWallAndGroundHit(RaycastHit2D groundHit, RaycastHit2D leftWallHit, RaycastHit2D rightWallHit, bool playerHasCorrectDirectionalInput)
@@ -526,19 +530,18 @@ public class PlayerMovement : MonoBehaviour
     {
         velocity.y = 0;
         playerState = PlayerStates.Grounded;
-        transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
-        OffsetGroundPlayerPosition(hitGround);
+        //transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
     }
 
-    private void OffsetGroundPlayerPosition(RaycastHit2D hit)
-    {
-        Vector2 pos = new Vector2(hit.point.x, transform.position.y);
-        float hitYCoord = Physics2D.Raycast(pos, Vector2.down, transform.position.y - hit.point.y + 0.1f, playerRaycastLayerMask).point.y;
+    //private void OffsetGroundPlayerPosition(RaycastHit2D hit)
+    //{
+    //    Vector2 pos = new Vector2(hit.point.x, transform.position.y);
+    //    float hitYCoord = Physics2D.Raycast(pos, Vector2.down, transform.position.y - hit.point.y + 0.1f, playerRaycastLayerMask).point.y;
 
-        float yOffset = groundRaycastDistance - (rb.position.y - hitYCoord);
-        Vector3 newPosition = new Vector3(transform.position.x, rb.position.y + yOffset);
-        transform.position = newPosition;
-    }
+    //    float yOffset = groundRaycastDistance - (rb.position.y - hitYCoord);
+    //    Vector3 newPosition = new Vector3(newPos.x, rb.position.y + yOffset);
+    //    transform.position = newPosition;
+    //}
 
     private float CalculateRaycastExtraLength(float velocity)
     {
@@ -741,7 +744,6 @@ public class PlayerMovement : MonoBehaviour
                 //Time.timeScale = 0.25f; 
                 additionalVelocity.x += accelerationValue;
                 //StopAcceleration();
-                //print("decaying velocity");
             }
 
             //postGrappleVelocity = new Vector2(Mathf.Max(postGrappleVelocity.x, 0), Mathf.Max(postGrappleVelocity.y, 0));
