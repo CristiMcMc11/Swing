@@ -15,11 +15,12 @@ public class PlayerMovement : MonoBehaviour
         Grounded,
         InAir,
         OnWall,
-        WallClimbing,
-        Vaulting,
+        WallClimb,
+        Vault,
         GrappleThrow,
-        GrappleSwinging,
-        GrapplePulling
+        GrappleSwing,
+        GrapplePull,
+        WallHold
     }
 
     public enum PlayerDirection
@@ -30,7 +31,10 @@ public class PlayerMovement : MonoBehaviour
 
     //References
     private Rigidbody2D rb;
-    private GrapplerMovement grapplerMovementScript;
+    private GrapplerMovement gmScript;
+
+    private GameObject visualsGO;
+    private PlayerVisuals visualsScript;
 
     [Header("Runtime")]
     public PlayerStates playerState  = PlayerStates.Grounded;
@@ -40,14 +44,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 additionalVelocity;
 
     [SerializeField] private Vector2 playerDirectionalInput = Vector2.zero;
-    [SerializeField] private Vector2 playerMoveInput = Vector2.zero;
 
     [SerializeField] private bool banMoveRight = false;
     [SerializeField] private bool banMoveLeft = false;
 
     [SerializeField] private bool playerCannotMove = false;
     [SerializeField] private float moveSpeed;
-    [SerializeField] private float horizontalSpeed;
 
     [Header("Raycasting")]
     public LayerMask playerRaycastLayerMask;
@@ -75,6 +77,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float accelerationTime = 0.5f; //time to get to walkSpeed
     [SerializeField] private float airResistance = 1f; //units a second;
     [SerializeField] private bool instantAccelerate = false;
+    [SerializeField] private bool instantTurn = true;
     [SerializeField] private float accelerationValue;
     private int accelerationTweenId;
 
@@ -107,8 +110,11 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        grapplerMovementScript = GetComponent<GrapplerMovement>();
+        gmScript = GetComponent<GrapplerMovement>();
         animator = GetComponent<Animator>();
+
+        visualsGO = transform.Find("Visuals").gameObject;
+        visualsScript = visualsGO.GetComponent<PlayerVisuals>();
         //Time.timeScale = 0.5f;
     }
 
@@ -148,7 +154,6 @@ public class PlayerMovement : MonoBehaviour
     private void LateUpdate()
     {
         FindPlayerState(true);
-        SetAnimatorParameters();
     }
 
     public Vector2 GetVelocity()
@@ -169,30 +174,6 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             moveSpeed = 0;
-        }
-    }
-
-    private void SetHorizontalSpeed(bool canMoveHorizontally)
-    {
-        if (!canMoveHorizontally)
-        {
-            StopAcceleration();
-            horizontalSpeed = 0;
-            return;
-        }
-
-        if (additionalVelocity.x == 0)
-        {
-            if (playerDirectionalInput.x != 0 && accelerationValue == 0)
-            {
-                StartAcceleration(playerDirectionalInput.x);
-            }
-
-            horizontalSpeed = walkSpeed * accelerationValue;
-        }
-        else
-        {
-            horizontalSpeed = additionalVelocity.x;
         }
     }
 
@@ -251,9 +232,10 @@ public class PlayerMovement : MonoBehaviour
 
                 if (Mathf.Abs(velocity.x) > walkSpeed)
                 {
+                    print("air resistancing it");
                     velocity.x -= airResistance * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
 
-                    if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x))
+                    if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x) && playerDirectionalInput.x != 0)
                     {
                         velocity.x -= accelerationRate * Mathf.Sign(velocity.x);
                     }
@@ -287,7 +269,6 @@ public class PlayerMovement : MonoBehaviour
             case PlayerStates.OnWall:
                 velocity.x = 0;
                 velocity.y = wallVelocity;
-                SetHorizontalSpeed(false);
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -330,11 +311,11 @@ public class PlayerMovement : MonoBehaviour
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
-            case PlayerStates.GrappleSwinging:
+            case PlayerStates.GrappleSwing:
                 //Special grapple stuff
                 Vector2 prevPoint = rb.position;
 
-                Vector2 newPosition = grapplerMovementScript.GrappleSwingMovement();
+                Vector2 newPosition = gmScript.GrappleSwingMovement();
                 rb.MovePosition(newPosition);
 
                 //rb.MoveRotation(grapplerMovementScript.GrappleSwingRotation());
@@ -344,8 +325,8 @@ public class PlayerMovement : MonoBehaviour
                 grapplerDirectionFromPrevPoint = (newPosition - prevPoint).normalized;
                 break;
 
-            case PlayerStates.GrapplePulling:
-                rb.MovePosition(grapplerMovementScript.GrapplePullMovement());
+            case PlayerStates.GrapplePull:
+                rb.MovePosition(gmScript.GrapplePullMovement());
                 break;
 
             case PlayerStates.OnWall:
@@ -355,7 +336,7 @@ public class PlayerMovement : MonoBehaviour
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
-            case PlayerStates.WallClimbing:
+            case PlayerStates.WallClimb:
                 velocity.y = climbHeight / climbTime;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
@@ -377,29 +358,26 @@ public class PlayerMovement : MonoBehaviour
         }
 
         float zRotation = 0;
-        if (playerState == PlayerStates.GrappleSwinging)
+        if (playerState == PlayerStates.GrappleSwing)
         {
-            playerDirection = grapplerMovementScript.grappleSpeed < 0 ? PlayerDirection.Left : PlayerDirection.Right;
-            zRotation = grapplerMovementScript.GrappleRotationDeg();
+            playerDirection = gmScript.grappleSpeed < 0 ? PlayerDirection.Left : PlayerDirection.Right;
+            zRotation = gmScript.GrappleRotationDeg();
             zRotation = playerDirection == PlayerDirection.Right ? zRotation : -zRotation;
         }
-        else if (playerState == PlayerStates.GrapplePulling)
+        else if (playerState == PlayerStates.GrapplePull)
         {
-            zRotation = grapplerMovementScript.GrappleRotationDeg();
+            zRotation = gmScript.GrappleRotationDeg();
             zRotation = playerDirection == PlayerDirection.Right ? zRotation : -zRotation;
         }
 
         int yRotation = playerDirection == PlayerDirection.Left ? 180 : 0;
-        rb.rotation = zRotation;
-        transform.rotation = Quaternion.Euler(0, yRotation, rb.rotation);
+
+        visualsGO.transform.rotation = Quaternion.Euler(0, yRotation, zRotation);
+        //rb.rotation = zRotation;
+        //transform.rotation = Quaternion.Euler(0, yRotation, rb.rotation);
     }
 
-    private void SetAnimatorParameters()
-    {
-        animator.SetInteger("PlayerState", ((int)playerState));
-        animator.SetBool("Moving", velocity.x != 0);
-        animator.SetBool("Falling", velocity.y < 0);
-    }
+    
 
     private void StartAcceleration(float playerMoveInput)
     {
@@ -461,26 +439,26 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D rightWallHit = CheckForWallTouch(false);
 
         bool wallHit = leftWallHit || rightWallHit;
-        bool playerIsCorrectState = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwinging;
+        bool playerIsCorrectState = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwing;
         bool playerHasCorrectDirectionalInput = (leftWallHit && playerDirectionalInput.x < 0) || (rightWallHit && playerDirectionalInput.x > 0);
 
-        if (groundedHit && wallHit)
+        if (groundedHit && wallHit) //both ground and wall hit
         {
             OnWallAndGroundHit(groundedHit, leftWallHit, rightWallHit, playerHasCorrectDirectionalInput);
         }
-        else if (!groundedHit && !wallHit && playerState == PlayerStates.Grounded)
+        else if (!groundedHit && !wallHit && playerState == PlayerStates.Grounded) //not hitting anything but state is still grounded
         {
             playerState = PlayerStates.InAir;
         }
-        else if (groundedHit && playerState == PlayerStates.InAir && velocity.y < 0)
+        else if (groundedHit && playerState == PlayerStates.InAir && velocity.y < 0) //grounded hit while falling
         {
             BecomeGrounded(groundedHit);
         }
-        else if (wallHit && !groundedHit && playerIsCorrectState && (playerHasCorrectDirectionalInput || !requireWallCorrectDirectionalInput) && canGoOnWall)
+        else if (wallHit && !groundedHit && playerIsCorrectState && (playerHasCorrectDirectionalInput || !requireWallCorrectDirectionalInput) && canGoOnWall) //wall hit and player can go on wall
         {
             OnWallHit(leftWallHit, rightWallHit);
         }
-        else if (wallHit && playerState == PlayerStates.WallClimbing) //Checking for a vault while wall climbing
+        else if (wallHit && playerState == PlayerStates.WallClimb) //Checking for a vault while wall climbing
         {
             onRightWall = rightWallHit ? true : false;
             RaycastHit2D correctHit = onRightWall ? rightWallHit : leftWallHit;
@@ -493,6 +471,19 @@ public class PlayerMovement : MonoBehaviour
         else if (!wallHit && playerState == PlayerStates.OnWall) //fell off the wall
         {
             LeaveWall(false);
+        }
+
+        //Grappler Cases
+        else if (wallHit && playerState == PlayerStates.GrapplePull)
+        {
+            if (gmScript.CheckForValidWallHold(leftWallHit ? leftWallHit : rightWallHit))
+            {
+                EnterWallHold(leftWallHit);
+            }
+        }
+        else if (groundedHit && playerState == PlayerStates.GrapplePull)
+        {
+            gmScript.CancelGrapplePull();
         }
     }
 
@@ -517,7 +508,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     //GROUNDED
-    private RaycastHit2D CheckForGrounded()
+    public RaycastHit2D CheckForGrounded()
     {
         Vector2 offset = new Vector2(0, -groundBoxCastYOffset);
         Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
@@ -549,7 +540,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     //AIR
-    private void CheckForHeadhit()
+    public bool CheckForHeadhit()
     {
         Vector2 offset = new Vector2(0, groundBoxCastYOffset);
         RaycastHit2D hit = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 0, playerRaycastLayerMask);
@@ -559,6 +550,7 @@ public class PlayerMovement : MonoBehaviour
             velocity.y = 0;
             additionalVelocity.y = 0;
         }
+        return hit;
     }
 
     //WALL
@@ -586,8 +578,14 @@ public class PlayerMovement : MonoBehaviour
         }
 
         OffsetWallPlayerPosition(correctHit, onRightWall);
-        playerState = PlayerStates.OnWall;
-        TweenWallSlideSpeed();
+        EnterWall();
+    }
+
+    private void EnterWallHold(bool leftWall)
+    {
+        gmScript.CancelGrapplePull();
+        playerDirection = leftWall ? PlayerDirection.Left : PlayerDirection.Right;
+        playerState = PlayerStates.WallHold;
     }
 
     private void OffsetWallPlayerPosition(RaycastHit2D hit, bool onTheRight)
@@ -627,8 +625,6 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="context"></param>
     public void OnMove(InputAction.CallbackContext context)
     {
-        playerMoveInput = context.ReadValue<Vector2>();
-
         if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
         {
             //StartAcceleration(playerMoveInput.x);
@@ -650,7 +646,7 @@ public class PlayerMovement : MonoBehaviour
         {
             velocity.y = velocity.y < 0 ? velocity.y : velocity.y / 4; //unchanged if velocity.y is negative, and divided by 4 if velocity.y is positive
         }
-        else if (keyPressed && playerState == PlayerStates.GrappleSwinging)
+        else if (keyPressed && playerState == PlayerStates.GrappleSwing)
         {
             JumpOutOfGrapple();
         }
@@ -667,17 +663,21 @@ public class PlayerMovement : MonoBehaviour
         if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall))
         {
             playerState = PlayerStates.GrappleThrow;
-            StartCoroutine(grapplerMovementScript.GrappleThrowCoroutine());
+            StartCoroutine(gmScript.GrappleThrowCoroutine());
         }
-        else if (keyPressed && playerState == PlayerStates.GrappleSwinging)
+        else if (keyPressed && playerState == PlayerStates.GrappleSwing)
         {
-            grapplerMovementScript.StartGrapplePulling();
+            gmScript.StartGrapplePulling();
         }
-        else if (!keyPressed && playerState == PlayerStates.GrapplePulling)
+        else if (!keyPressed && playerState == PlayerStates.GrapplePull)
         {
             velocity = Vector2.zero;
-            AddForce(grapplerMovementScript.CancelGrapplePull() / 1.2f, true);
+            AddForce(gmScript.CancelGrapplePull() / 1.2f, true);
             FindPlayerState(false);
+        }
+        else if (!keyPressed && playerState == PlayerStates.WallHold)
+        {
+            EnterWall();
         }
     }
 
@@ -688,22 +688,26 @@ public class PlayerMovement : MonoBehaviour
         if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall))
         {
             playerState = PlayerStates.GrappleThrow;
-            StartCoroutine(grapplerMovementScript.GrappleThrowCoroutine());
-            grapplerMovementScript.grapplePullOnStartGrappling = true;
+            StartCoroutine(gmScript.GrappleThrowCoroutine());
+            gmScript.grapplePullOnStartGrappling = true;
         }
-        else if (keyPressed && playerState == PlayerStates.GrappleSwinging)
+        else if (keyPressed && playerState == PlayerStates.GrappleSwing)
         {
-            grapplerMovementScript.StartGrapplePulling();
+            gmScript.StartGrapplePulling();
         }
         else if (keyPressed && playerState == PlayerStates.GrappleThrow)
         {
-            grapplerMovementScript.grapplePullOnStartGrappling = true;
+            gmScript.grapplePullOnStartGrappling = true;
         }
-        else if (!keyPressed && playerState == PlayerStates.GrapplePulling)
+        else if (!keyPressed && playerState == PlayerStates.GrapplePull)
         {
             velocity = Vector2.zero;
-            AddForce(grapplerMovementScript.CancelGrapplePull() / 1.2f, true);
+            AddForce(gmScript.CancelGrapplePull() / 1.2f, true);
             FindPlayerState(false);
+        }
+        else if (!keyPressed && playerState == PlayerStates.WallHold)
+        {
+            EnterWall();
         }
     }
 
@@ -766,6 +770,12 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void EnterWall()
+    {
+        playerState = PlayerStates.OnWall;
+        TweenWallSlideSpeed();
+    }
+
     private void LeaveWall(bool wallJump)
     {
         velocity.y = additionalVelocity.y;
@@ -780,12 +790,12 @@ public class PlayerMovement : MonoBehaviour
     private IEnumerator WallClimb()
     {
         LeanTween.cancel(gameObject);
-        playerState = PlayerStates.WallClimbing;
+        playerState = PlayerStates.WallClimb;
         StartCoroutine(SetBanMoveTimer(onRightWall, !onRightWall, climbTime));
 
         yield return new WaitForSeconds(climbTime);
 
-        if (playerState != PlayerStates.Vaulting)
+        if (playerState != PlayerStates.Vault)
         {
             playerState = PlayerStates.OnWall;
             velocity.y = 0;
@@ -836,7 +846,7 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator Vault(bool onRightWall, Vector2 hitPoint)
     {
-        playerState = PlayerStates.Vaulting;
+        playerState = PlayerStates.Vault;
 
         //Part 1: Move the player up
         velocity = Vector2.zero;
@@ -852,13 +862,13 @@ public class PlayerMovement : MonoBehaviour
         LeanTween.move(gameObject, newPos, vaultTime / 2)
             .setOnUpdate((float nothing) =>
             {
-                if (playerState != PlayerStates.Vaulting)
+                if (playerState != PlayerStates.Vault)
                 {
                     LeanTween.cancel(gameObject);
                 }
             });
         yield return new WaitForSeconds(vaultTime / 2);
-        playerState = playerState == PlayerStates.Vaulting ? PlayerStates.Grounded : playerState;
+        playerState = playerState == PlayerStates.Vault ? PlayerStates.Grounded : playerState;
     }
 
     #endregion
@@ -868,7 +878,7 @@ public class PlayerMovement : MonoBehaviour
     public void JumpOutOfGrapple()
     {
         playerState = PlayerStates.InAir;
-        Vector2 grappleTransferVelocity = grapplerMovementScript.SetPostGrappleVelocity();
+        Vector2 grappleTransferVelocity = gmScript.SetPostGrappleVelocity();
         AddForce(grappleTransferVelocity, true);
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
     }

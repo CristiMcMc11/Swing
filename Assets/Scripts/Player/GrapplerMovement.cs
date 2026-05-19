@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 public class GrapplerMovement : MonoBehaviour
 {
     private Rigidbody2D rb;
-    private PlayerMovement playerMovementScript;
+    private PlayerMovement pmScript;
     [SerializeField] private Vector2 hitTerrainRaycastSize;
     public GameObject grappleHead;
 
@@ -44,7 +44,7 @@ public class GrapplerMovement : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        playerMovementScript = GetComponent<PlayerMovement>();
+        pmScript = GetComponent<PlayerMovement>();
     }
 
     public void SetGrappleDirectionalInput(InputAction.CallbackContext context)
@@ -59,7 +59,7 @@ public class GrapplerMovement : MonoBehaviour
 
         if (directionalInput == Vector2.zero)
         {
-            directionalInput = playerMovementScript.playerDirection == PlayerMovement.PlayerDirection.Right ? Vector2.right : Vector2.left;
+            directionalInput = pmScript.playerDirection == PlayerMovement.PlayerDirection.Right ? Vector2.right : Vector2.left;
         }
 
         grapplePoint = FindGrapplePoint(ref grappleHit, directionalInput);
@@ -102,7 +102,7 @@ public class GrapplerMovement : MonoBehaviour
         else
         {
             yield return new WaitForSeconds(time / 2);
-            playerMovementScript.playerState = PlayerMovement.PlayerStates.InAir;
+            pmScript.playerState = PlayerMovement.PlayerStates.InAir;
         }
     }
 
@@ -110,7 +110,7 @@ public class GrapplerMovement : MonoBehaviour
 
     private Vector2 FindGrapplePoint(ref bool grappleHit, Vector2 directionalInput)
     {
-        LayerMask layerMask = playerMovementScript.playerRaycastLayerMask;
+        LayerMask layerMask = pmScript.playerRaycastLayerMask;
 
         //1. Throw a raycast in the desired direction
         RaycastHit2D rayHit = rb.Raycast(Vector2.zero, directionalInput, maxDistance, layerMask);
@@ -141,9 +141,9 @@ public class GrapplerMovement : MonoBehaviour
 
     private void StartGrappleSwinging()
     {
-        grappleSpeed = InitialVelocityToAngleSpeed(playerMovementScript.GetVelocity(), grapplePointDistance, FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance));
+        grappleSpeed = InitialVelocityToAngleSpeed(pmScript.GetVelocity(), grapplePointDistance, FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance));
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
-        playerMovementScript.playerState = PlayerMovement.PlayerStates.GrappleSwinging;
+        pmScript.playerState = PlayerMovement.PlayerStates.GrappleSwing;
     } 
 
     /// <summary>
@@ -210,7 +210,7 @@ public class GrapplerMovement : MonoBehaviour
 
     public Vector2 SetPostGrappleVelocity()
     {
-        return AngleSpeedToVelocity(grappleSpeed, grapplePointDistance, playerMovementScript.grapplerDirectionFromPrevPoint);
+        return AngleSpeedToVelocity(grappleSpeed, grapplePointDistance, pmScript.grapplerDirectionFromPrevPoint);
     }
 
     #endregion
@@ -306,7 +306,7 @@ public class GrapplerMovement : MonoBehaviour
     private float CalculateAngleSpeed(float currentPlayerAngleRad)
     {
         bool isOnTheRight = currentPlayerAngleRad * Mathf.Rad2Deg >= 270 || currentPlayerAngleRad * Mathf.Rad2Deg <= 90;
-        float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -playerMovementScript.gravity), grapplePointDistance);
+        float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -pmScript.gravity), grapplePointDistance);
 
         //If the player is on the right, add gravityAngleSpeed. If the player is on the left, subtract gravityAngleSpeed
         grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
@@ -328,12 +328,12 @@ public class GrapplerMovement : MonoBehaviour
     #region Grapple Pull
     public void StartGrapplePulling()
     {
-        playerMovementScript.playerState = PlayerMovement.PlayerStates.GrapplePulling;
+        pmScript.playerState = PlayerMovement.PlayerStates.GrapplePull;
     }
 
     public Vector2 GrapplePullMovement()
     {
-        if (TouchingGround())
+        if (pmScript.CheckForGrounded() || pmScript.CheckForHeadhit())
         {
             return rb.position;
         }
@@ -346,16 +346,24 @@ public class GrapplerMovement : MonoBehaviour
     {
         Vector2 exitVelocity = Vector2.zero;
 
-        if (!TouchingGround())
+        if (!pmScript.CheckForGrounded() && !pmScript.CheckForHeadhit())
         {
-            print("not touching ground");
             Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
             exitVelocity = directionToGrapplePoint * pullSpeed;
         }
 
-        playerMovementScript.playerState = PlayerMovement.PlayerStates.InAir;
+        pmScript.playerState = PlayerMovement.PlayerStates.InAir;
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
         return exitVelocity;
+    }
+
+    public bool CheckForValidWallHold(RaycastHit2D hit)
+    {
+        if (Mathf.Sign(hit.point.x - transform.position.x) == Mathf.Sign(grapplePoint.x - transform.position.x))
+        {
+            return true;
+        }
+        return false;
     }
 
     private bool TouchingGround()
