@@ -31,7 +31,7 @@ public class PlayerMovement : MonoBehaviour
 
     //References
     private Rigidbody2D rb;
-    private GrapplerMovement gmScript;
+    private GrapplerMovementJoint gmScript;
 
     private GameObject visualsGO;
     private PlayerVisuals visualsScript;
@@ -110,7 +110,7 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        gmScript = GetComponent<GrapplerMovement>();
+        gmScript = GetComponent<GrapplerMovementJoint>();
         animator = GetComponent<Animator>();
 
         visualsGO = transform.Find("Visuals").gameObject;
@@ -159,6 +159,11 @@ public class PlayerMovement : MonoBehaviour
     public Vector2 GetVelocity()
     {
         return velocity;
+    }
+    
+    public float GetGravity()
+    {
+        return gravity;
     }
 
     private void SetMoveSpeed()
@@ -260,6 +265,10 @@ public class PlayerMovement : MonoBehaviour
                 }
                     break;
 
+            case PlayerStates.GrappleSwing:
+                velocity = Vector2.zero;
+                break;
+
             //case PlayerStates.GrappleThrow:
             //    //Gravity but no horizontal input
             //    ApplyGravity();
@@ -313,16 +322,15 @@ public class PlayerMovement : MonoBehaviour
 
             case PlayerStates.GrappleSwing:
                 //Special grapple stuff
+
                 Vector2 prevPoint = rb.position;
+                newPos = rb.position + velocity * Time.fixedDeltaTime;
+                //rb.MovePosition(newPos);
 
-                Vector2 newPosition = gmScript.GrappleSwingMovement();
-                rb.MovePosition(newPosition);
+                //Vector2 newPosition = gmScript.GrappleSwingMovement();
+                //rb.MovePosition(newPosition);
 
-                //rb.MoveRotation(grapplerMovementScript.GrappleSwingRotation());
-                //transform.rotation = new Quaternion(transform.rotation.x, transform.rotation.y, grapplerMovementScript.GrappleSwingRotation(), transform.rotation.w);
-                //rb.MoveRotation(grapplerMovementScript.GrappleSwingRotation());
-
-                grapplerDirectionFromPrevPoint = (newPosition - prevPoint).normalized;
+                //grapplerDirectionFromPrevPoint = (newPosition - prevPoint).normalized;
                 break;
 
             case PlayerStates.GrapplePull:
@@ -648,7 +656,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else if (keyPressed && playerState == PlayerStates.GrappleSwing)
         {
-            JumpOutOfGrapple();
+            AddForce(gmScript.JumpOutOfGrapple(), true);
         }
         else if (keyPressed && playerState == PlayerStates.OnWall)
         {
