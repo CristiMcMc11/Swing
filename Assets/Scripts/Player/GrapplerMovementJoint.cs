@@ -12,10 +12,11 @@ public class GrapplerMovementJoint : MonoBehaviour
     [SerializeField] private Vector2 hitTerrainRaycastSize;
     public GameObject grappleHead;
 
-    [Header("Grappler Swing Runtime")]
+    [Header("Grappler Runtime")]
     [SerializeField] private Vector2 directionalInput;
     [SerializeField] private float grapplePointDistance;
     [SerializeField] private Vector2 grapplePoint;
+    [SerializeField] private Vector2 grapplePullPosition = Vector2.zero;
 
     [SerializeField] private Vector2 directionFromPrevPoint;
     [SerializeField] public float grappleSpeed; //MAKE GET; PRIVATE SET
@@ -63,7 +64,7 @@ public class GrapplerMovementJoint : MonoBehaviour
 
         if (directionalInput == Vector2.zero)
         {
-            directionalInput = pmScript.playerDirection == PlayerMovement.PlayerDirection.Right ? Vector2.right : Vector2.left;
+            directionalInput = pmScript.playerDirection == PlayerDirection.Right ? Vector2.right : Vector2.left;
         }
 
         grapplePoint = FindGrapplePoint(ref grappleHit, directionalInput);
@@ -151,6 +152,7 @@ public class GrapplerMovementJoint : MonoBehaviour
         joint.connectedAnchor = grapplePoint;
         joint.enabled = true;
         joint.distance = grapplePointDistance;
+        print(pmScript.GetVelocity());
         rb.AddForce(pmScript.GetVelocity(), ForceMode2D.Impulse);
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
         pmScript.playerState = PlayerMovement.PlayerStates.GrappleSwing;
@@ -161,6 +163,11 @@ public class GrapplerMovementJoint : MonoBehaviour
         pmScript.playerState = PlayerStates.InAir;
         joint.enabled = false;
         return rb.linearVelocity;
+    }
+
+    public void CancelGrappleSwing()
+    {
+        joint.enabled = false;
     }
 
     public Vector2 SetPostGrappleVelocity()
@@ -283,7 +290,9 @@ public class GrapplerMovementJoint : MonoBehaviour
     #region Grapple Pull
     public void StartGrapplePulling()
     {
-        pmScript.playerState = PlayerMovement.PlayerStates.GrapplePull;
+        pmScript.playerState = PlayerStates.GrapplePull;
+        grapplePullPosition = Vector2.zero;
+        pmScript.ZeroVelocity();
         joint.enabled = false;
     }
 
@@ -291,7 +300,7 @@ public class GrapplerMovementJoint : MonoBehaviour
     {
         if (pmScript.CheckForGrounded() || pmScript.CheckForHeadhit())
         {
-            return rb.position;
+            CancelGrapplePull();
         }
 
         Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
@@ -308,7 +317,7 @@ public class GrapplerMovementJoint : MonoBehaviour
             exitVelocity = directionToGrapplePoint * pullSpeed;
         }
 
-        pmScript.playerState = PlayerMovement.PlayerStates.InAir;
+        pmScript.playerState = PlayerStates.InAir;
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
         return exitVelocity;
     }

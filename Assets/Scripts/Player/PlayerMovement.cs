@@ -82,6 +82,7 @@ public class PlayerMovement : MonoBehaviour
     private int accelerationTweenId;
 
     [Header("Wall")]
+    private Vector2 wallHoldPos;
     [SerializeField] private bool onRightWall;
     [SerializeField] private float wallVelocity = 0f;
     [SerializeField] private bool canGoOnWall = true;
@@ -166,6 +167,11 @@ public class PlayerMovement : MonoBehaviour
         return gravity;
     }
 
+    public void ZeroVelocity()
+    {
+        velocity = Vector2.zero;
+    }
+
     private void SetMoveSpeed()
     {
         if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
@@ -237,7 +243,6 @@ public class PlayerMovement : MonoBehaviour
 
                 if (Mathf.Abs(velocity.x) > walkSpeed)
                 {
-                    print("air resistancing it");
                     velocity.x -= airResistance * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
 
                     if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x) && playerDirectionalInput.x != 0)
@@ -347,6 +352,10 @@ public class PlayerMovement : MonoBehaviour
             case PlayerStates.WallClimb:
                 velocity.y = climbHeight / climbTime;
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                break;
+
+            case PlayerStates.WallHold:
+                rb.MovePosition(wallHoldPos);
                 break;
         }
     }
@@ -575,10 +584,15 @@ public class PlayerMovement : MonoBehaviour
     }
 
     private void OnWallHit(RaycastHit2D hitLeft, RaycastHit2D hitRight)
-    {
+     {
         RaycastHit2D correctHit;
         onRightWall = hitRight ? true : false;
         correctHit = onRightWall ? hitRight : hitLeft;
+
+        if (playerState == PlayerStates.GrappleSwing)
+        {
+            gmScript.CancelGrappleSwing();
+        }
 
         if (CheckForVault(correctHit, onRightWall)) //CheckForVault() will call Vault() if it detects a hit
         {
@@ -591,8 +605,15 @@ public class PlayerMovement : MonoBehaviour
 
     private void EnterWallHold(bool leftWall)
     {
+        if (CheckForHeadhit())
+        {
+            gmScript.CancelGrapplePull();
+            return;
+        }
+
         gmScript.CancelGrapplePull();
         playerDirection = leftWall ? PlayerDirection.Left : PlayerDirection.Right;
+        wallHoldPos = rb.position;
         playerState = PlayerStates.WallHold;
     }
 
