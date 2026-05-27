@@ -1,4 +1,5 @@
 using System.Collections;
+using Mono.Cecil.Cil;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -9,6 +10,7 @@ public class GrapplerMovementJoint : MonoBehaviour
     private Rigidbody2D rb;
     private PlayerMovement pmScript;
     private DistanceJoint2D joint;
+    private LineRenderer lineRenderer;
     [SerializeField] private Vector2 hitTerrainRaycastSize;
     public GameObject grappleHead;
 
@@ -48,8 +50,24 @@ public class GrapplerMovementJoint : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         pmScript = GetComponent<PlayerMovement>();
+        lineRenderer = transform.Find("Visuals").GetComponent<LineRenderer>();
         joint = GetComponent<DistanceJoint2D>();
         joint.enabled = false;
+    }
+
+    private void LateUpdate()
+    {
+        if (pmScript.playerState == PlayerStates.GrappleSwing || pmScript.playerState == PlayerStates.GrapplePull)
+        {
+            lineRenderer.enabled = true;
+            lineRenderer.SetPosition(0, transform.position);
+            lineRenderer.SetPosition(1, grapplePoint);
+        }
+        else
+        {
+            joint.enabled = false;
+            lineRenderer.enabled = false;
+        }
     }
 
     public void SetGrappleDirectionalInput(InputAction.CallbackContext context)
@@ -152,6 +170,7 @@ public class GrapplerMovementJoint : MonoBehaviour
         joint.connectedAnchor = grapplePoint;
         joint.enabled = true;
         joint.distance = grapplePointDistance;
+
         print(pmScript.GetVelocity());
         rb.AddForce(pmScript.GetVelocity(), ForceMode2D.Impulse);
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
@@ -161,13 +180,13 @@ public class GrapplerMovementJoint : MonoBehaviour
     public Vector2 JumpOutOfGrapple()
     {
         pmScript.playerState = PlayerStates.InAir;
-        joint.enabled = false;
         return rb.linearVelocity;
     }
 
     public void CancelGrappleSwing()
     {
         joint.enabled = false;
+        lineRenderer.enabled = false;
     }
 
     public Vector2 SetPostGrappleVelocity()
@@ -319,6 +338,7 @@ public class GrapplerMovementJoint : MonoBehaviour
 
         pmScript.playerState = PlayerStates.InAir;
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
+        lineRenderer.enabled = false;
         return exitVelocity;
     }
 

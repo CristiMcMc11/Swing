@@ -298,7 +298,6 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void ApplyMovement()
     {
-
         switch (playerState)
         {
             case PlayerStates.Grounded:
