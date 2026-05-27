@@ -31,7 +31,7 @@ public class PlayerMovement : MonoBehaviour
 
     //References
     private Rigidbody2D rb;
-    private GrapplerMovementJoint gmScript;
+    private GrapplerMovement gmScript;
 
     private GameObject visualsGO;
     private PlayerVisuals visualsScript;
@@ -111,7 +111,7 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        gmScript = GetComponent<GrapplerMovementJoint>();
+        gmScript = GetComponent<GrapplerMovement>();
         animator = GetComponent<Animator>();
 
         visualsGO = transform.Find("Visuals").gameObject;

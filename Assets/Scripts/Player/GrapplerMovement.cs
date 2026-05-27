@@ -1,19 +1,22 @@
 using System.Collections;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static PlayerMovement;
 
 public class GrapplerMovement : MonoBehaviour
 {
     private Rigidbody2D rb;
     private PlayerMovement pmScript;
+    private DistanceJoint2D joint;
+    private LineRenderer lineRenderer;
     [SerializeField] private Vector2 hitTerrainRaycastSize;
     public GameObject grappleHead;
 
-    [Header("Grappler Swing Runtime")]
+    [Header("Grappler Runtime")]
     [SerializeField] private Vector2 directionalInput;
     [SerializeField] private float grapplePointDistance;
     [SerializeField] private Vector2 grapplePoint;
+    [SerializeField] private Vector2 grapplePullPosition = Vector2.zero;
 
     [SerializeField] private Vector2 directionFromPrevPoint;
     [SerializeField] public float grappleSpeed; //MAKE GET; PRIVATE SET
@@ -38,13 +41,31 @@ public class GrapplerMovement : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.azure;
-        Gizmos.DrawWireCube(transform.position, hitTerrainRaycastSize);
+        Gizmos.DrawWireCube(transform.position, new Vector2(leniency, maxDistance) * directionalInput);
     }
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         pmScript = GetComponent<PlayerMovement>();
+        lineRenderer = transform.Find("Visuals").GetComponent<LineRenderer>();
+        joint = GetComponent<DistanceJoint2D>();
+        joint.enabled = false;
+    }
+
+    private void LateUpdate()
+    {
+        if (pmScript.playerState == PlayerStates.GrappleSwing || pmScript.playerState == PlayerStates.GrapplePull)
+        {
+            lineRenderer.enabled = true;
+            lineRenderer.SetPosition(0, transform.position);
+            lineRenderer.SetPosition(1, grapplePoint);
+        }
+        else
+        {
+            joint.enabled = false;
+            lineRenderer.enabled = false;
+        }
     }
 
     public void SetGrappleDirectionalInput(InputAction.CallbackContext context)
@@ -59,7 +80,7 @@ public class GrapplerMovement : MonoBehaviour
 
         if (directionalInput == Vector2.zero)
         {
-            directionalInput = pmScript.playerDirection == PlayerMovement.PlayerDirection.Right ? Vector2.right : Vector2.left;
+            directionalInput = pmScript.playerDirection == PlayerDirection.Right ? Vector2.right : Vector2.left;
         }
 
         grapplePoint = FindGrapplePoint(ref grappleHit, directionalInput);
@@ -125,6 +146,8 @@ public class GrapplerMovement : MonoBehaviour
         Vector2 offset = directionalInput * (maxDistance / 2);
         RaycastHit2D boxHit = rb.BoxCast(offset, boxSize, 0, directionalInput, maxDistance, layerMask);
 
+        RaycastHit2D[] boxHits = rb.BoxCastAll(offset, boxSize, 0, directionalInput, maxDistance, layerMask);
+
         if (boxHit)
         {
             return boxHit.point;
@@ -141,71 +164,29 @@ public class GrapplerMovement : MonoBehaviour
 
     private void StartGrappleSwinging()
     {
-        grappleSpeed = InitialVelocityToAngleSpeed(pmScript.GetVelocity(), grapplePointDistance, FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance));
+        rb.gravityScale = pmScript.GetGravity() / Physics2D.gravity.y;
+
+        //grappleSpeed = InitialVelocityToAngleSpeed(pmScript.GetVelocity(), grapplePointDistance, FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance));
+        joint.connectedAnchor = grapplePoint;
+        joint.enabled = true;
+        joint.distance = grapplePointDistance;
+
+        //print(pmScript.GetVelocity());
+        rb.AddForce(pmScript.GetVelocity(), ForceMode2D.Impulse);
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
         pmScript.playerState = PlayerMovement.PlayerStates.GrappleSwing;
-    } 
-
-    /// <summary>
-    /// Calculates the point the player should move to next while grapple swinging.
-    /// </summary>
-    /// <param name="distance"></param>
-    /// <param name="grapplePoint"></param>
-    /// <param name="angleToMove"></param>
-    /// <returns> The point the player should move to next </returns>
-    private Vector2 GrappleSwingNextPosition(float distance, Vector2 grapplePoint, float angleToMove)
-    {
-        if (CheckGrappleWallHit(angleToMove))
-        {
-            angleToMove = 0;
-        }
-        else if (!canHitWall)
-        {
-            grappleSpeed = 0;
-        }
-        else if (inStillHang)
-        {
-            angleToMove = 0;
-        }
-
-        angleToMove *= Time.fixedDeltaTime;
-
-        Vector2 prevPoint = rb.position;
-        float radius = Vector2.Distance(grapplePoint, prevPoint);
-
-        // 1. Get current angle in radians
-        float currentAngle = Mathf.Atan2(prevPoint.y - grapplePoint.y, prevPoint.x - grapplePoint.x);
-
-        // 2. Add move angle
-        float newAngle = currentAngle + angleToMove;
-
-        // 3. Calculate new point
-        float x = grapplePoint.x + radius * Mathf.Cos(newAngle);
-        float y = grapplePoint.y + radius * Mathf.Sin(newAngle);
-
-        return new Vector2(x, y);
     }
 
-    private bool CheckGrappleWallHit(float angleToMove)
+    public Vector2 JumpOutOfGrapple()
     {
-        if (TouchingGround() && angleToMove != 0 && canHitWall)
-        {
-            canHitWall = false;
-            return true;
-        }
-
-        if (!TouchingGround() && !canHitWall)
-        {
-            canHitWall = true;
-        }
-        return false;
+        pmScript.playerState = PlayerStates.InAir;
+        return rb.linearVelocity;
     }
 
-    public Vector2 GrappleSwingMovement()
+    public void CancelGrappleSwing()
     {
-        float currentPlayerAngle = FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance);
-        Vector2 newPosition = GrappleSwingNextPosition(grapplePointDistance, grapplePoint, CalculateAngleSpeed(currentPlayerAngle));
-        return newPosition;
+        joint.enabled = false;
+        lineRenderer.enabled = false;
     }
 
     public Vector2 SetPostGrappleVelocity()
@@ -328,14 +309,17 @@ public class GrapplerMovement : MonoBehaviour
     #region Grapple Pull
     public void StartGrapplePulling()
     {
-        pmScript.playerState = PlayerMovement.PlayerStates.GrapplePull;
+        pmScript.playerState = PlayerStates.GrapplePull;
+        grapplePullPosition = Vector2.zero;
+        pmScript.ZeroVelocity();
+        joint.enabled = false;
     }
 
     public Vector2 GrapplePullMovement()
     {
         if (pmScript.CheckForGrounded() || pmScript.CheckForHeadhit())
         {
-            return rb.position;
+            CancelGrapplePull();
         }
 
         Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
@@ -352,8 +336,9 @@ public class GrapplerMovement : MonoBehaviour
             exitVelocity = directionToGrapplePoint * pullSpeed;
         }
 
-        pmScript.playerState = PlayerMovement.PlayerStates.InAir;
+        pmScript.playerState = PlayerStates.InAir;
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
+        lineRenderer.enabled = false;
         return exitVelocity;
     }
 

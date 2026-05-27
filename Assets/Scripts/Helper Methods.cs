@@ -33,4 +33,10 @@ public static class HelperMethods
         RaycastHit2D hit = Physics2D.BoxCast(rb.position + offset, size, angle, direction, distance, layerMask);
         return hit;
     }
+
+    public static RaycastHit2D[] BoxCastAll(this Rigidbody2D rb, Vector2 offset, Vector2 size, float angle, Vector2 direction, float distance, int layerMask)
+    {
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(rb.position + offset, size, angle, direction, distance, layerMask);
+        return hits;
+    }
 }
