@@ -30,6 +30,10 @@ public class GrapplerMovement : MonoBehaviour
     public bool grapplePullOnStartGrappling = false;
 
     [Header("Grappler Settables")]
+    [SerializeField] private float maxGrapples = 1;
+    [SerializeField] private float currGrapples = 0;
+    public bool canGrapple => currGrapples < maxGrapples;
+
     [SerializeField] private float maxDistance = 20;
 
     [SerializeField] private float leniency = 5f;
@@ -73,6 +77,11 @@ public class GrapplerMovement : MonoBehaviour
         directionalInput = context.ReadValue<Vector2>();
     }
 
+    public void ResetGrapples()
+    {
+        currGrapples = 0;
+    }
+
     public IEnumerator GrappleThrowCoroutine()
     {
         int layerMask = LayerMask.GetMask("Terrain");
@@ -110,6 +119,7 @@ public class GrapplerMovement : MonoBehaviour
 
         if (grappleHit)
         {
+            currGrapples++;
             if (grapplePullOnStartGrappling)
             {
                 StartGrapplePulling();

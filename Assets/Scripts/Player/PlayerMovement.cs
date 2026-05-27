@@ -181,6 +181,11 @@ public class PlayerMovement : MonoBehaviour
         velocity = Vector2.zero;
     }
 
+    private void ResetAirAbilities()
+    {
+        gmScript.ResetGrapples();
+    }
+
     private void SetMoveSpeed()
     {
         if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
@@ -546,7 +551,7 @@ public class PlayerMovement : MonoBehaviour
         {
             transform.position = new Vector2(transform.position.x, transform.position.y + 0.01f);
         }
-
+        ResetAirAbilities();
         velocity.y = 0;
         playerState = PlayerStates.Grounded;
         //transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
@@ -720,8 +725,8 @@ public class PlayerMovement : MonoBehaviour
     public void OnGrappleInput(InputAction.CallbackContext context)
     {
         bool keyPressed = context.ReadValue<float>() == 1;
-
-        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall))
+        print(gmScript.canGrapple);
+        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall) && gmScript.canGrapple)
         {
             playerState = PlayerStates.GrappleThrow;
             StartCoroutine(gmScript.GrappleThrowCoroutine());
@@ -746,7 +751,7 @@ public class PlayerMovement : MonoBehaviour
     {
         bool keyPressed = context.ReadValue<float>() == 1;
 
-        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall))
+        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall) && gmScript.canGrapple)
         {
             playerState = PlayerStates.GrappleThrow;
             StartCoroutine(gmScript.GrappleThrowCoroutine());
@@ -869,6 +874,7 @@ public class PlayerMovement : MonoBehaviour
     private void WallJump()
     {
         LeaveWall(true);
+        ResetAirAbilities();
         //StopAcceleration();
 
         if (playerDirectionalInput.x != 0)
