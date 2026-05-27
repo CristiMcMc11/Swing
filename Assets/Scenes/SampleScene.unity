@@ -1423,6 +1423,9 @@ MonoBehaviour:
   groundRaycastDistance: 0.9
   wallBoxCastOffset: 0.45
   wallBoxCastSize: 1.8
+  groundSnapHorizontal: 0.3
+  groundSnapVertical: 0.1
+  groundSnapCorrection: 0.1
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
@@ -1667,6 +1670,9 @@ MonoBehaviour:
   groundRaycastDistance: 0.9
   wallBoxCastOffset: 0.45
   wallBoxCastSize: 1.8
+  groundSnapHorizontal: 0.3
+  groundSnapVertical: 0.05
+  groundSnapCorrection: 0.15
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}

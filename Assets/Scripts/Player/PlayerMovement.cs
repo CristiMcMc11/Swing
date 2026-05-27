@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Drawing;
 using System.Security.Cryptography;
 
 //using UnityEditorInternal;
@@ -60,6 +61,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float wallBoxCastOffset = 0.5f;
     [SerializeField] private float wallBoxCastSize = 2f;
 
+    [SerializeField] private float groundSnapHorizontal = 0.3f;
+    [SerializeField] private float groundSnapVertical = 0.1f;
+    [SerializeField] private float groundSnapCorrection = 0.1f;
+
     [Header("Ground")]
     [SerializeField] private float walkSpeed = 10;
     [SerializeField] private bool facingRight = true;
@@ -119,26 +124,30 @@ public class PlayerMovement : MonoBehaviour
         //Time.timeScale = 0.5f;
     }
 
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.color = UnityEngine.Color.yellow;
-    //    Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
-    //    Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
-    //    Gizmos.DrawWireCube(position, size);
+    private void OnDrawGizmos()
+    {
+        //Gizmos.color = UnityEngine.Color.yellow;
+        //Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
+        //Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
+        //Gizmos.DrawWireCube(position, size);
 
-    //    Vector2 offset = new Vector2(0, groundBoxCastYOffset);
-    //    Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+        //Vector2 offset = new Vector2(0, groundBoxCastYOffset);
+        //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
 
-    //    Gizmos.color = UnityEngine.Color.deepPink;
-    //    size = new Vector2(0.1f, wallBoxCastSize);
-    //    Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
-    //    Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
-    //    Gizmos.DrawWireCube(rb.position + leftOffset, size);
-    //    Gizmos.DrawWireCube(rb.position + rightOffset, size);
+        //Gizmos.color = UnityEngine.Color.deepPink;
+        //size = new Vector2(0.1f, wallBoxCastSize);
+        //Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
+        //Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
+        //Gizmos.DrawWireCube(rb.position + leftOffset, size);
+        //Gizmos.DrawWireCube(rb.position + rightOffset, size);
 
-    //    //offset = new Vector2(0, groundBoxCastYOffset);
-    //    //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
-    //}
+        //offset = new Vector2(0, groundBoxCastYOffset);
+        //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+
+        Gizmos.color = UnityEngine.Color.yellow;
+        Gizmos.DrawWireCube(transform.position + new Vector3(0, 0.1f, 0), new Vector2(groundBoxCastLength + 0.2f, wallBoxCastSize - groundSnapVertical));
+        Gizmos.DrawWireCube(transform.position + new Vector3(0, -groundBoxCastYOffset, 0), new Vector2(groundBoxCastLength - groundSnapHorizontal, 0.2f));
+    }
 
     private void FixedUpdate()
     {
@@ -348,10 +357,10 @@ public class PlayerMovement : MonoBehaviour
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
-            case PlayerStates.WallClimb:
-                velocity.y = climbHeight / climbTime;
-                rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
-                break;
+            //case PlayerStates.WallClimb:
+            //    velocity.y = climbHeight / climbTime;
+            //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+            //    break;
 
             case PlayerStates.WallHold:
                 rb.MovePosition(wallHoldPos);
@@ -392,8 +401,6 @@ public class PlayerMovement : MonoBehaviour
         //rb.rotation = zRotation;
         //transform.rotation = Quaternion.Euler(0, yRotation, rb.rotation);
     }
-
-    
 
     private void StartAcceleration(float playerMoveInput)
     {
@@ -535,9 +542,28 @@ public class PlayerMovement : MonoBehaviour
 
     private void BecomeGrounded(RaycastHit2D hitGround)
     {
+        if (CheckSnapToGround())
+        {
+            transform.position = new Vector2(transform.position.x, transform.position.y + 0.01f);
+        }
+
         velocity.y = 0;
         playerState = PlayerStates.Grounded;
         //transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
+    }
+
+    private bool CheckSnapToGround()
+    {
+        Vector2 offset1 = new Vector2(0, groundSnapVertical);
+        Vector2 size1 = new Vector2(groundBoxCastLength + 0.2f, wallBoxCastSize- 0.5f);
+
+        Vector2 offset2 = new Vector2(0, -groundBoxCastYOffset);
+        Vector2 size2 = new Vector2(groundBoxCastLength - groundSnapHorizontal, 0.2f);
+
+        RaycastHit2D hit = rb.BoxCast(offset1, size1, 0, Vector2.up, 1, playerRaycastLayerMask);
+        RaycastHit2D hit2 = rb.BoxCast(offset2, size2, 0, Vector2.up, 1, playerRaycastLayerMask);
+
+        return !hit && !hit2;
     }
 
     //private void OffsetGroundPlayerPosition(RaycastHit2D hit)
@@ -595,6 +621,13 @@ public class PlayerMovement : MonoBehaviour
 
         if (CheckForVault(correctHit, onRightWall)) //CheckForVault() will call Vault() if it detects a hit
         {
+            return;
+        }
+
+        if (CheckSnapToGround())
+        {
+            transform.position = new Vector2(transform.position.x, transform.position.y + groundSnapCorrection);
+            playerState = PlayerStates.Grounded;
             return;
         }
 
@@ -788,14 +821,16 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnWallJumpInput()
     {
-        if (playerDirectionalInput.y > 0)
-        {
-            StartCoroutine(WallClimb());
-        }
-        else
-        {
-            WallJump();
-        }
+        //if (playerDirectionalInput.y > 0)
+        //{
+        //    StartCoroutine(WallClimb());
+        //}
+        //else
+        //{
+        //    WallJump();
+        //}
+
+        WallJump();
     }
 
     private void EnterWall()
@@ -815,21 +850,21 @@ public class PlayerMovement : MonoBehaviour
         playerState = PlayerStates.InAir;
     }
 
-    private IEnumerator WallClimb()
-    {
-        LeanTween.cancel(gameObject);
-        playerState = PlayerStates.WallClimb;
-        StartCoroutine(SetBanMoveTimer(onRightWall, !onRightWall, climbTime));
+    //private IEnumerator WallClimb()
+    //{
+    //    LeanTween.cancel(gameObject);
+    //    playerState = PlayerStates.WallClimb;
+    //    StartCoroutine(SetBanMoveTimer(onRightWall, !onRightWall, climbTime));
 
-        yield return new WaitForSeconds(climbTime);
+    //    yield return new WaitForSeconds(climbTime);
 
-        if (playerState != PlayerStates.Vault)
-        {
-            playerState = PlayerStates.OnWall;
-            velocity.y = 0;
-            TweenWallSlideSpeed();
-        }
-    }
+    //    if (playerState != PlayerStates.Vault)
+    //    {
+    //        playerState = PlayerStates.OnWall;
+    //        velocity.y = 0;
+    //        TweenWallSlideSpeed();
+    //    }
+    //}
 
     private void WallJump()
     {

@@ -35,11 +35,11 @@ public class GrapplerMovementOld : MonoBehaviour
     [SerializeField] private float grappleEntrySpeedThreshold = 0.05f;
 
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.azure;
-        Gizmos.DrawWireCube(transform.position, hitTerrainRaycastSize);
-    }
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.azure;
+    //    Gizmos.DrawWireCube(transform.position, hitTerrainRaycastSize);
+    //}
 
     private void Awake()
     {
