@@ -134,6 +134,7 @@ public class GrapplerMovement : MonoBehaviour
         else
         {
             yield return new WaitForSeconds(time / 2);
+            groundedGrapple = false;
             pmScript.playerState = PlayerMovement.PlayerStates.InAir;
         }
     }
@@ -328,14 +329,10 @@ public class GrapplerMovement : MonoBehaviour
 
     public Vector2 GrapplePullMovement()
     {
-        //if ((pmScript.CheckForGrounded() || pmScript.CheckForHeadhit()) && !groundedGrapple && !pmScript.CheckForWallTouch(false))
-        //{
-        //    CancelGrapplePull();
-        //}
-        //else if (groundedGrapple)
-        //{
-        //    groundedGrapple = false;
-        //}
+        if (!pmScript.CheckForGrounded() && groundedGrapple)
+        {
+            groundedGrapple = false;
+        }
 
         Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
         return rb.position + directionToGrapplePoint * pullSpeed * Time.fixedDeltaTime;
@@ -354,6 +351,7 @@ public class GrapplerMovement : MonoBehaviour
         pmScript.playerState = PlayerStates.InAir;
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
         lineRenderer.enabled = false;
+        groundedGrapple = false;
         return exitVelocity;
     }
 

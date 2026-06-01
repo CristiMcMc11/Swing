@@ -42,7 +42,6 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
 
-    [SerializeField] private Vector2 playerDirectionalInput = Vector2.zero;
 
     [SerializeField] private bool banMoveRight = false;
     [SerializeField] private bool banMoveLeft = false;
@@ -62,6 +61,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float groundSnapHorizontal = 0.3f;
     [SerializeField] private float groundSnapVertical = 0.1f;
     [SerializeField] private float groundSnapCorrection = 0.1f;
+
+    [Header("Inputs")]
+    [SerializeField] private Vector2 directionalInput = Vector2.zero;
+    [SerializeField] private bool jumpKeyDown = false;
+    [SerializeField] private bool grappleKeyDown = false;
+    [SerializeField] private bool grapplePullKeyDown = false;
 
     [Header("Ground")]
     [SerializeField] private float walkSpeed = 10;
@@ -238,19 +243,19 @@ public class PlayerMovement : MonoBehaviour
                 }
                 else
                 {
-                    if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x) && playerDirectionalInput.x != 0) //opposite input to velocity
+                    if (Mathf.Sign(directionalInput.x) != Mathf.Sign(velocity.x) && directionalInput.x != 0) //opposite input to velocity
                     {
                         velocity.x -= accelerationRate * Mathf.Sign(velocity.x) * 2;
                     }
-                    else if (playerDirectionalInput.x > 0) //input is right
+                    else if (directionalInput.x > 0) //input is right
                     {
                         velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
                     }
-                    else if (playerDirectionalInput.x < 0) //input is left
+                    else if (directionalInput.x < 0) //input is left
                     {
                         velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
                     }
-                    else if (playerDirectionalInput.x == 0) //input is neutral
+                    else if (directionalInput.x == 0) //input is neutral
                     {
                         if (velocity.x > 0)
                         {
@@ -272,22 +277,22 @@ public class PlayerMovement : MonoBehaviour
                 {
                     velocity.x -= airResistance * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
 
-                    if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x) && playerDirectionalInput.x != 0)
+                    if (Mathf.Sign(directionalInput.x) != Mathf.Sign(velocity.x) && directionalInput.x != 0)
                     {
                         velocity.x -= accelerationRate * Mathf.Sign(velocity.x);
                     }
                 }
                 else
                 {
-                    if (playerDirectionalInput.x > 0)
+                    if (directionalInput.x > 0)
                     {
                         velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
                     }
-                    else if (playerDirectionalInput.x < 0)
+                    else if (directionalInput.x < 0)
                     {
                         velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
                     }
-                    else if (playerDirectionalInput.x == 0)
+                    else if (directionalInput.x == 0)
                     {
                         if (velocity.x != 0)
                         {
@@ -479,23 +484,24 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D leftWallHit = CheckForWallTouch(true);
         RaycastHit2D rightWallHit = CheckForWallTouch(false);
 
+        bool canGround = groundedHit && !gmScript.groundedGrapple;
         bool wallHit = leftWallHit || rightWallHit;
-        bool playerIsCorrectState = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwing;
-        bool playerHasCorrectDirectionalInput = (leftWallHit && playerDirectionalInput.x < 0) || (rightWallHit && playerDirectionalInput.x > 0);
+        bool playerIsCorrectStateforWall = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwing;
+        bool playerHasCorrectDirectionalInput = (leftWallHit && directionalInput.x < 0) || (rightWallHit && directionalInput.x > 0);
 
-        if (groundedHit && wallHit) //both ground and wall hit
+        if (canGround && wallHit) //both ground and wall hit
         {
             OnWallAndGroundHit(groundedHit, leftWallHit, rightWallHit, playerHasCorrectDirectionalInput);
         }
-        else if (!groundedHit && !wallHit && playerState == PlayerStates.Grounded) //not hitting anything but state is still grounded
+        else if (!canGround && !wallHit && playerState == PlayerStates.Grounded) //not hitting anything but state is still grounded
         {
             playerState = PlayerStates.InAir;
         }
-        else if (groundedHit && playerState == PlayerStates.InAir && velocity.y < 0) //grounded hit while falling
+        else if (canGround && playerState == PlayerStates.InAir && velocity.y < 0) //grounded hit while falling
         {
             BecomeGrounded(groundedHit);
         }
-        else if (wallHit && !groundedHit && playerIsCorrectState && (playerHasCorrectDirectionalInput || !requireWallCorrectDirectionalInput) && canGoOnWall) //wall hit and player can go on wall
+        else if (wallHit && !canGround && playerIsCorrectStateforWall && (playerHasCorrectDirectionalInput || !requireWallCorrectDirectionalInput) && canGoOnWall) //wall hit and player can go on wall
         {
             OnWallHit(leftWallHit, rightWallHit);
         }
@@ -505,7 +511,7 @@ public class PlayerMovement : MonoBehaviour
             RaycastHit2D correctHit = onRightWall ? rightWallHit : leftWallHit;
             //CheckForVault(correctHit, onRightWall);
         }
-        else if (playerState == PlayerStates.OnWall && ((onRightWall && playerDirectionalInput.x < 0) || (!onRightWall && playerDirectionalInput.x > 0))) //checking whether input doesn't match the wall direction
+        else if (playerState == PlayerStates.OnWall && ((onRightWall && directionalInput.x < 0) || (!onRightWall && directionalInput.x > 0))) //checking whether input doesn't match the wall direction
         {
             LeaveWall(false);
         }
@@ -517,12 +523,16 @@ public class PlayerMovement : MonoBehaviour
         //Grappler Cases
         else if (wallHit && playerState == PlayerStates.GrapplePull)
         {
-            if (gmScript.CheckForValidWallHold(leftWallHit ? leftWallHit : rightWallHit))
+            if (gmScript.CheckForValidWallHold(leftWallHit ? leftWallHit : rightWallHit) && grapplePullKeyDown)
             {
                 EnterWallHold(leftWallHit);
             }
+            else
+            {
+                gmScript.CancelGrapplePull();
+            }
         }
-        else if (groundedHit && playerState == PlayerStates.GrapplePull)
+        else if (canGround && playerState == PlayerStates.GrapplePull)
         {
             gmScript.CancelGrapplePull();
         }
@@ -780,6 +790,7 @@ public class PlayerMovement : MonoBehaviour
     public void OnGrapplePullInput(InputAction.CallbackContext context)
     {
         bool keyPressed = context.ReadValue<float>() == 1;
+        grapplePullKeyDown = keyPressed;
 
         if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall || playerState == PlayerStates.Grounded) && gmScript.canGrapple)
         {
@@ -814,7 +825,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void DirectionalInput(InputAction.CallbackContext context)
     {
-        playerDirectionalInput = context.ReadValue<Vector2>();
+        directionalInput = context.ReadValue<Vector2>();
     }
     #endregion
 
@@ -844,7 +855,7 @@ public class PlayerMovement : MonoBehaviour
             additionalVelocity.y = additionalVelocity.y < 0.01f ? 0 : additionalVelocity.y;
 
             additionalVelocity.x = additionalVelocity.x < 0 ? Mathf.Min(additionalVelocity.x + PGVxDecayFactor, 0) : Mathf.Max(additionalVelocity.x - PGVxDecayFactor, 0);
-            if ((playerDirectionalInput.x < 0 && additionalVelocity.x > 0) || (playerDirectionalInput.x > 0 && additionalVelocity.x < 0))
+            if ((directionalInput.x < 0 && additionalVelocity.x > 0) || (directionalInput.x > 0 && additionalVelocity.x < 0))
             {
                 //Time.timeScale = 0.25f; 
                 additionalVelocity.x += accelerationValue;
@@ -913,9 +924,9 @@ public class PlayerMovement : MonoBehaviour
         ResetAirAbilities();
         //StopAcceleration();
 
-        if (playerDirectionalInput.x != 0)
+        if (directionalInput.x != 0)
         {
-            StartAcceleration(playerDirectionalInput.x);
+            StartAcceleration(directionalInput.x);
         }
         //StartAcceleration(playerMoveInput.x);
         //additionalVelocity = wallJumpVelocity;

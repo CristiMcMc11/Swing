@@ -666,7 +666,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 72.45615, y: 2.3260498, z: -10}
+  m_LocalPosition: {x: 17.83615, y: -2.94395, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1834,7 +1834,6 @@ MonoBehaviour:
   playerDirection: 1
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
-  playerDirectionalInput: {x: 0, y: 0}
   banMoveRight: 0
   banMoveLeft: 0
   playerCannotMove: 0
@@ -1850,6 +1849,10 @@ MonoBehaviour:
   groundSnapHorizontal: 0.3
   groundSnapVertical: 0.1
   groundSnapCorrection: 0.1
+  directionalInput: {x: 0, y: 0}
+  jumpKeyDown: 0
+  grappleKeyDown: 0
+  grapplePullKeyDown: 0
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
@@ -1877,6 +1880,7 @@ MonoBehaviour:
   disableVault: 1
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
+  gameSpeed: 0
 --- !u!212 &1101314328
 SpriteRenderer:
   serializedVersion: 2
@@ -2197,7 +2201,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 51.87, y: 4.68, z: 0}
+  m_LocalPosition: {x: -2.75, y: -0.59, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -2220,7 +2224,6 @@ MonoBehaviour:
   playerDirection: 1
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
-  playerDirectionalInput: {x: 0, y: 0}
   banMoveRight: 0
   banMoveLeft: 0
   playerCannotMove: 0
@@ -2236,6 +2239,10 @@ MonoBehaviour:
   groundSnapHorizontal: 0.3
   groundSnapVertical: 0.05
   groundSnapCorrection: 0.15
+  directionalInput: {x: 0, y: 0}
+  jumpKeyDown: 0
+  grappleKeyDown: 0
+  grapplePullKeyDown: 0
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
@@ -2263,6 +2270,7 @@ MonoBehaviour:
   disableVault: 1
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
+  gameSpeed: 1
 --- !u!50 &1152884643
 Rigidbody2D:
   serializedVersion: 5
@@ -2517,7 +2525,7 @@ DistanceJoint2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1152884637}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   m_EnableCollision: 1
   m_ConnectedRigidBody: {fileID: 0}
@@ -2528,7 +2536,7 @@ DistanceJoint2D:
   m_Anchor: {x: 0, y: 0}
   m_ConnectedAnchor: {x: 0, y: 0}
   m_AutoConfigureDistance: 1
-  m_Distance: 52.0807
+  m_Distance: 2.812579
   m_MaxDistanceOnly: 0
 --- !u!114 &1152884650
 MonoBehaviour:
@@ -3431,7 +3439,7 @@ Transform:
   m_GameObject: {fileID: 1533811930}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 72.45615, y: 2.3260498, z: -10}
+  m_LocalPosition: {x: 17.83615, y: -2.94395, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
