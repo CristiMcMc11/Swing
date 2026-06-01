@@ -26,6 +26,7 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private bool movingRight = true;
     [SerializeField] private bool canHitWall = true;
     [SerializeField] private bool inStillHang = false;
+    public bool groundedGrapple = false;
 
     public bool grapplePullOnStartGrappling = false;
 
@@ -327,10 +328,14 @@ public class GrapplerMovement : MonoBehaviour
 
     public Vector2 GrapplePullMovement()
     {
-        if (pmScript.CheckForGrounded() || pmScript.CheckForHeadhit())
-        {
-            CancelGrapplePull();
-        }
+        //if ((pmScript.CheckForGrounded() || pmScript.CheckForHeadhit()) && !groundedGrapple && !pmScript.CheckForWallTouch(false))
+        //{
+        //    CancelGrapplePull();
+        //}
+        //else if (groundedGrapple)
+        //{
+        //    groundedGrapple = false;
+        //}
 
         Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
         return rb.position + directionToGrapplePoint * pullSpeed * Time.fixedDeltaTime;

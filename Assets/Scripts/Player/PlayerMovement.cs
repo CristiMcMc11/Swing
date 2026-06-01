@@ -1,11 +1,9 @@
 using System.Collections;
-using System.Drawing;
-using System.Security.Cryptography;
 
 //using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Splines.Interpolators;
+using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -81,6 +79,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Acceleration")]
     [SerializeField] private float accelerationTime = 0.5f; //time to get to walkSpeed
     [SerializeField] private float airResistance = 1f; //units a second;
+    [SerializeField] private float groundFriction = 5f;
     [SerializeField] private bool instantAccelerate = false;
     [SerializeField] private bool instantTurn = true;
     [SerializeField] private float accelerationValue;
@@ -111,6 +110,9 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Animation")]
     private Animator animator;
+
+    [Header("testing/misc")]
+    [SerializeField] private float gameSpeed;
     #endregion
 
     private void Awake()
@@ -126,27 +128,29 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        //Gizmos.color = UnityEngine.Color.yellow;
-        //Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
-        //Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
-        //Gizmos.DrawWireCube(position, size);
-
-        //Vector2 offset = new Vector2(0, groundBoxCastYOffset);
-        //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
-
-        //Gizmos.color = UnityEngine.Color.deepPink;
-        //size = new Vector2(0.1f, wallBoxCastSize);
-        //Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
-        //Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
-        //Gizmos.DrawWireCube(rb.position + leftOffset, size);
-        //Gizmos.DrawWireCube(rb.position + rightOffset, size);
-
-        //offset = new Vector2(0, groundBoxCastYOffset);
-        //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
 
         Gizmos.color = UnityEngine.Color.yellow;
-        Gizmos.DrawWireCube(transform.position + new Vector3(0, 0.1f, 0), new Vector2(groundBoxCastLength + 0.2f, wallBoxCastSize - groundSnapVertical));
-        Gizmos.DrawWireCube(transform.position + new Vector3(0, -groundBoxCastYOffset, 0), new Vector2(groundBoxCastLength - groundSnapHorizontal, 0.2f));
+        Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
+        Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
+        Gizmos.DrawWireCube(position, size);
+
+        Vector2 offset = new Vector2(0, groundBoxCastYOffset);
+        Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+
+        Gizmos.color = UnityEngine.Color.deepPink;
+        size = new Vector2(0.1f, wallBoxCastSize);
+        Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
+        Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
+        Gizmos.DrawWireCube(rb.position + leftOffset, size);
+        Gizmos.DrawWireCube(rb.position + rightOffset, size);
+
+        offset = new Vector2(0, groundBoxCastYOffset);
+        Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+
+        //Gizmos.color = UnityEngine.Color.yellow;
+        //Gizmos.DrawWireCube(transform.position + new Vector3(0, 0.1f, 0), new Vector2(groundBoxCastLength + 0.2f, wallBoxCastSize - groundSnapVertical));
+        //Gizmos.DrawWireCube(transform.position + new Vector3(0, -groundBoxCastYOffset, 0), new Vector2(groundBoxCastLength - groundSnapHorizontal, 0.2f));
     }
 
     private void FixedUpdate()
@@ -164,6 +168,7 @@ public class PlayerMovement : MonoBehaviour
     private void LateUpdate()
     {
         FindPlayerState(true);
+        Time.timeScale = gameSpeed;
     }
 
     public Vector2 GetVelocity()
@@ -227,29 +232,37 @@ public class PlayerMovement : MonoBehaviour
         switch (playerState)
         {
             case PlayerStates.Grounded:
-                if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x) && playerDirectionalInput.x != 0)
+                if (Mathf.Abs(velocity.x) > walkSpeed)
                 {
-                    velocity.x -= accelerationRate * Mathf.Sign(velocity.x) * 2;
+                    velocity.x -= groundFriction * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
                 }
-                else if (playerDirectionalInput.x > 0)
+                else
                 {
-                    velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
-                }
-                else if (playerDirectionalInput.x < 0)
-                {
-                    velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
-                }
-                else if (playerDirectionalInput.x == 0)
-                {
-                    if (velocity.x > 0)
+                    if (Mathf.Sign(playerDirectionalInput.x) != Mathf.Sign(velocity.x) && playerDirectionalInput.x != 0) //opposite input to velocity
                     {
-                        velocity.x = Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed);
+                        velocity.x -= accelerationRate * Mathf.Sign(velocity.x) * 2;
                     }
-                    else if (velocity.x < 0)
+                    else if (playerDirectionalInput.x > 0) //input is right
                     {
-                        velocity.x = Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
+                        velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
+                    }
+                    else if (playerDirectionalInput.x < 0) //input is left
+                    {
+                        velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
+                    }
+                    else if (playerDirectionalInput.x == 0) //input is neutral
+                    {
+                        if (velocity.x > 0)
+                        {
+                            velocity.x = Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed);
+                        }
+                        else if (velocity.x < 0)
+                        {
+                            velocity.x = Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
+                        }
                     }
                 }
+                
                 break;
 
             case PlayerStates.InAir:
@@ -490,9 +503,9 @@ public class PlayerMovement : MonoBehaviour
         {
             onRightWall = rightWallHit ? true : false;
             RaycastHit2D correctHit = onRightWall ? rightWallHit : leftWallHit;
-            CheckForVault(correctHit, onRightWall);
+            //CheckForVault(correctHit, onRightWall);
         }
-        else if (playerState == PlayerStates.OnWall && ((onRightWall && moveSpeed < 0) || (!onRightWall && moveSpeed > 0))) //checking whether input doesn't match the wall direction
+        else if (playerState == PlayerStates.OnWall && ((onRightWall && playerDirectionalInput.x < 0) || (!onRightWall && playerDirectionalInput.x > 0))) //checking whether input doesn't match the wall direction
         {
             LeaveWall(false);
         }
@@ -601,7 +614,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     //WALL
-    private RaycastHit2D CheckForWallTouch(bool returnHitLeft)
+    public RaycastHit2D CheckForWallTouch(bool returnHitLeft)
     {
         Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
         Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
@@ -624,10 +637,10 @@ public class PlayerMovement : MonoBehaviour
             gmScript.CancelGrappleSwing();
         }
 
-        if (CheckForVault(correctHit, onRightWall)) //CheckForVault() will call Vault() if it detects a hit
-        {
-            return;
-        }
+        //if (CheckForVault(correctHit, onRightWall)) //CheckForVault() will call Vault() if it detects a hit
+        //{
+        //    return;
+        //}
 
         if (CheckSnapToGround())
         {
@@ -636,11 +649,20 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        OffsetWallPlayerPosition(correctHit, onRightWall);
+        if (playerDirection == PlayerDirection.Left && onRightWall)
+        {
+            playerDirection = PlayerDirection.Right;
+        }
+        else if (playerDirection == PlayerDirection.Right && !onRightWall)
+        {
+            playerDirection = PlayerDirection.Left;
+        }
+
+            OffsetWallPlayerPosition(correctHit, onRightWall);
         EnterWall();
     }
 
-    private void EnterWallHold(bool leftWall)
+    private void EnterWallHold(bool isLeftWall)
     {
         if (CheckForHeadhit())
         {
@@ -649,37 +671,45 @@ public class PlayerMovement : MonoBehaviour
         }
 
         gmScript.CancelGrapplePull();
-        playerDirection = leftWall ? PlayerDirection.Left : PlayerDirection.Right;
+        playerDirection = isLeftWall ? PlayerDirection.Left : PlayerDirection.Right;
         wallHoldPos = rb.position;
         playerState = PlayerStates.WallHold;
     }
 
     private void OffsetWallPlayerPosition(RaycastHit2D hit, bool onTheRight)
     {
+        print(hit.point);
         Vector2 position = new Vector2(rb.position.x, hit.point.y);
-        Vector2 wallPoint = Physics2D.Raycast(position, onTheRight ? Vector2.right : Vector2.left, wallBoxCastOffset + CalculateRaycastExtraLength(velocity.x), playerRaycastLayerMask).point;
+
+        RaycastHit2D wallHit = Physics2D.Raycast(position, onTheRight ? Vector2.right : Vector2.left, wallBoxCastOffset + CalculateRaycastExtraLength(velocity.x), playerRaycastLayerMask);
+        Vector2 wallPoint = wallHit.point;
+        if (!wallHit)
+        {
+            return;
+        }
+
         float newXCoord = onTheRight ? wallPoint.x - 0.4f : wallPoint.x + 0.4f;
         Vector3 newPosition = new Vector3(newXCoord, rb.position.y);
         transform.position = newPosition;
     }
 
     //VAULT
-    private bool CheckForVault(RaycastHit2D wallHit, bool hitOnRight)
-    {
-        if (disableVault) { return false; }
+    //private bool CheckForVault(RaycastHit2D wallHit, bool hitOnRight)
+    //{
+    //    if (disableVault) { return false; }
 
-        Vector2 direction = hitOnRight ? Vector2.right : Vector2.left;
-        RaycastHit2D vaultHit = rb.Raycast(Vector2.zero, direction, wallBoxCastOffset + 0.5f, playerRaycastLayerMask);
+    //    Vector2 direction = hitOnRight ? Vector2.right : Vector2.left;
+    //    RaycastHit2D vaultHit = rb.Raycast(Vector2.zero, direction, wallBoxCastOffset + 0.5f, playerRaycastLayerMask);
 
-        if (!vaultHit && wallHit.point.y <= rb.position.y)
-        {
-            StartCoroutine(Vault(hitOnRight, wallHit.point));
-            return true;
-        } else
-        {
-            return false;
-        }
-    }
+    //    if (!vaultHit && wallHit.point.y <= rb.position.y)
+    //    {
+    //        StartCoroutine(Vault(hitOnRight, wallHit.point));
+    //        return true;
+    //    } else
+    //    {
+    //        return false;
+    //    }
+    //}
 
     #endregion
 
@@ -751,8 +781,13 @@ public class PlayerMovement : MonoBehaviour
     {
         bool keyPressed = context.ReadValue<float>() == 1;
 
-        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall) && gmScript.canGrapple)
+        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall || playerState == PlayerStates.Grounded) && gmScript.canGrapple)
         {
+            if (playerState == PlayerStates.Grounded)
+            {
+                gmScript.groundedGrapple = true;
+            }
+
             playerState = PlayerStates.GrappleThrow;
             StartCoroutine(gmScript.GrappleThrowCoroutine());
             gmScript.grapplePullOnStartGrappling = true;
@@ -841,6 +876,7 @@ public class PlayerMovement : MonoBehaviour
     private void EnterWall()
     {
         playerState = PlayerStates.OnWall;
+
         TweenWallSlideSpeed();
     }
 
@@ -913,32 +949,32 @@ public class PlayerMovement : MonoBehaviour
 
     #region Vaulting
 
-    private IEnumerator Vault(bool onRightWall, Vector2 hitPoint)
-    {
-        playerState = PlayerStates.Vault;
+    //private IEnumerator Vault(bool onRightWall, Vector2 hitPoint)
+    //{
+    //    playerState = PlayerStates.Vault;
 
-        //Part 1: Move the player up
-        velocity = Vector2.zero;
-        float yOffset = groundBoxCastYOffset - (transform.position.y - hitPoint.y);
-        transform.position = new Vector2(transform.position.x, transform.position.y + yOffset);
+    //    //Part 1: Move the player up
+    //    velocity = Vector2.zero;
+    //    float yOffset = groundBoxCastYOffset - (transform.position.y - hitPoint.y);
+    //    transform.position = new Vector2(transform.position.x, transform.position.y + yOffset);
 
-        yield return new WaitForSeconds(vaultTime / 2);
+    //    yield return new WaitForSeconds(vaultTime / 2);
 
-        //Part 2: Move the player right/left
-        float newX = onRightWall ? transform.position.x + wallBoxCastOffset * 2 : transform.position.x - wallBoxCastOffset * 2;
-        Vector2 newPos = new Vector2(newX, transform.position.y);
+    //    //Part 2: Move the player right/left
+    //    float newX = onRightWall ? transform.position.x + wallBoxCastOffset * 2 : transform.position.x - wallBoxCastOffset * 2;
+    //    Vector2 newPos = new Vector2(newX, transform.position.y);
 
-        LeanTween.move(gameObject, newPos, vaultTime / 2)
-            .setOnUpdate((float nothing) =>
-            {
-                if (playerState != PlayerStates.Vault)
-                {
-                    LeanTween.cancel(gameObject);
-                }
-            });
-        yield return new WaitForSeconds(vaultTime / 2);
-        playerState = playerState == PlayerStates.Vault ? PlayerStates.Grounded : playerState;
-    }
+    //    LeanTween.move(gameObject, newPos, vaultTime / 2)
+    //        .setOnUpdate((float nothing) =>
+    //        {
+    //            if (playerState != PlayerStates.Vault)
+    //            {
+    //                LeanTween.cancel(gameObject);
+    //            }
+    //        });
+    //    yield return new WaitForSeconds(vaultTime / 2);
+    //    playerState = playerState == PlayerStates.Vault ? PlayerStates.Grounded : playerState;
+    //}
 
     #endregion
 
