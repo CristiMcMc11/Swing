@@ -28,6 +28,14 @@ public class PlayerMovement : MonoBehaviour
         Right
     }
 
+    private enum InputBan
+    {
+        None,
+        Left,
+        Right,
+        All
+    }
+
     //References
     private Rigidbody2D rb;
     private GrapplerMovement gmScript;
@@ -42,12 +50,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
 
-
-    [SerializeField] private bool banMoveRight = false;
-    [SerializeField] private bool banMoveLeft = false;
-
     [SerializeField] private bool playerCannotMove = false;
-    [SerializeField] private float moveSpeed;
 
     [Header("Raycasting")]
     public LayerMask playerRaycastLayerMask;
@@ -64,6 +67,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Inputs")]
     [SerializeField] private Vector2 directionalInput = Vector2.zero;
+    [SerializeField] private InputBan inputBan = InputBan.None;
     [SerializeField] private bool jumpKeyDown = false;
     [SerializeField] private bool grappleKeyDown = false;
     [SerializeField] private bool grapplePullKeyDown = false;
@@ -88,6 +92,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool instantAccelerate = false;
     [SerializeField] private bool instantTurn = true;
     [SerializeField] private float accelerationValue;
+    [SerializeField] private float inputBanTime = 0.1f;
     private int accelerationTweenId;
 
     [Header("Wall")]
@@ -103,6 +108,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float climbHeight = 15;
     [SerializeField] private float climbTime = 0.1f;
     [SerializeField] private Vector2 wallJumpVelocity = new Vector2(10, 10);
+    [SerializeField] private float wallJumpInputBanTime = 0.2f;
 
     [SerializeField] private float vaultTime = 0.25f;
 
@@ -162,7 +168,6 @@ public class PlayerMovement : MonoBehaviour
     {
         //CheckForWallTouch();
         //CheckForGrounded();
-        SetMoveSpeed();
         CheckForHeadhit();
         DecayAdditionalVelocity();
         SetVelocity();
@@ -196,29 +201,13 @@ public class PlayerMovement : MonoBehaviour
         gmScript.ResetGrapples();
     }
 
-    private void SetMoveSpeed()
+    private IEnumerator SetBanMoveTimer(bool leftBan, float timeSec)
     {
-        if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
-        {
-            moveSpeed = walkSpeed * accelerationValue;
-            if (banMoveLeft && moveSpeed < 0 || banMoveRight && moveSpeed > 0)
-            {
-                moveSpeed = 0;
-            }
-        }
-        else
-        {
-            moveSpeed = 0;
-        }
-    }
-
-    private IEnumerator SetBanMoveTimer(bool leftBan, bool rightBan, float timeSec)
-    {
-        banMoveLeft = leftBan ? true : banMoveLeft;
-        banMoveRight = rightBan ? true : banMoveRight;
+        StopCoroutine(SetBanMoveTimer(leftBan, timeSec));
+        inputBan = InputBan.None;
+        inputBan = leftBan ? InputBan.Left : InputBan.Right;
         yield return new WaitForSeconds(timeSec);
-        banMoveLeft = leftBan ? false : banMoveLeft;
-        banMoveRight = rightBan ? false : banMoveRight;
+        inputBan = InputBan.None;
     }
 
     private void AddForce(Vector2 force, bool resetVelocityBefore)
@@ -234,95 +223,106 @@ public class PlayerMovement : MonoBehaviour
             accelerationRate = Mathf.Max(velocity.x, walkSpeed);
         }
 
-        switch (playerState)
+        float playerInput = directionalInput.x;
+        if (inputBan == InputBan.Left)
         {
-            case PlayerStates.Grounded:
-                if (Mathf.Abs(velocity.x) > walkSpeed)
-                {
-                    velocity.x -= groundFriction * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
-                }
-                else
-                {
-                    if (Mathf.Sign(directionalInput.x) != Mathf.Sign(velocity.x) && directionalInput.x != 0) //opposite input to velocity
+            playerInput = Mathf.Max(0, playerInput);
+        }
+        else if (inputBan == InputBan.Right)
+        {
+            playerInput = Mathf.Min(0, playerInput);
+        }
+
+            switch (playerState)
+            {
+                case PlayerStates.Grounded:
+                    if (Mathf.Abs(velocity.x) > walkSpeed)
                     {
-                        velocity.x -= accelerationRate * Mathf.Sign(velocity.x) * 2;
+                        velocity.x -= groundFriction * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
                     }
-                    else if (directionalInput.x > 0) //input is right
+                    else
                     {
-                        velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
-                    }
-                    else if (directionalInput.x < 0) //input is left
-                    {
-                        velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
-                    }
-                    else if (directionalInput.x == 0) //input is neutral
-                    {
-                        if (velocity.x > 0)
+                        if (Mathf.Sign(playerInput) != Mathf.Sign(velocity.x) && playerInput != 0) //opposite input to velocity
                         {
-                            velocity.x = Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed);
+                            velocity.x -= accelerationRate * Mathf.Sign(velocity.x) * 2;
                         }
-                        else if (velocity.x < 0)
+                        else if (playerInput > 0) //input is right
                         {
-                            velocity.x = Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
+                            velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
                         }
-                    }
-                }
-                
-                break;
-
-            case PlayerStates.InAir:
-                ApplyGravity();
-
-                if (Mathf.Abs(velocity.x) > walkSpeed)
-                {
-                    velocity.x -= airResistance * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
-
-                    if (Mathf.Sign(directionalInput.x) != Mathf.Sign(velocity.x) && directionalInput.x != 0)
-                    {
-                        velocity.x -= accelerationRate * Mathf.Sign(velocity.x);
-                    }
-                }
-                else
-                {
-                    if (directionalInput.x > 0)
-                    {
-                        velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
-                    }
-                    else if (directionalInput.x < 0)
-                    {
-                        velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
-                    }
-                    else if (directionalInput.x == 0)
-                    {
-                        if (velocity.x != 0)
+                        else if (playerInput < 0) //input is left
                         {
-                            velocity.x = velocity.x > 0 ? Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed) : Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
+                            velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
+                        }
+                        else if (playerInput == 0) //input is neutral
+                        {
+                            if (velocity.x > 0)
+                            {
+                                velocity.x = Mathf.Clamp(velocity.x - accelerationRate, 0, walkSpeed);
+                            }
+                            else if (velocity.x < 0)
+                            {
+                                velocity.x = Mathf.Clamp(velocity.x + accelerationRate, -walkSpeed, 0);
+                            }
                         }
                     }
-                }
+
                     break;
 
-            case PlayerStates.GrappleSwing:
-                velocity = Vector2.zero;
-                break;
+                case PlayerStates.InAir:
+                    ApplyGravity();
 
-            //case PlayerStates.GrappleThrow:
-            //    //Gravity but no horizontal input
-            //    ApplyGravity();
-            //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
-            //    break;
+                    if (Mathf.Abs(velocity.x) > walkSpeed)
+                    {
+                        velocity.x -= airResistance * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
 
-            case PlayerStates.OnWall:
-                velocity.x = 0;
-                velocity.y = wallVelocity;
-                rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
-                break;
+                        if (Mathf.Sign(playerInput) != Mathf.Sign(velocity.x) && playerInput != 0)
+                        {
+                            velocity.x -= accelerationRate * Mathf.Sign(velocity.x);
+                        }
+                    }
+                    else
+                    {
+                        if (playerInput > 0)
+                        {
+                            velocity.x = Mathf.Min(velocity.x + accelerationRate, walkSpeed);
+                        }
+                        else if (playerInput < 0)
+                        {
+                            velocity.x = Mathf.Max(velocity.x - accelerationRate, -walkSpeed);
+                        }
+                        else if (playerInput == 0)
+                        {
+                            if (velocity.x != 0)
+                            {
+                                float airResistanceRate = airResistance * Time.fixedDeltaTime;
+                                velocity.x = velocity.x > 0 ? Mathf.Clamp(velocity.x - airResistanceRate, 0, walkSpeed) : Mathf.Clamp(velocity.x + airResistanceRate, -walkSpeed, 0);
+                            }
+                        }
+                    }
+                    break;
 
-                //case PlayerStates.WallClimbing:
-                //    velocity.y = climbHeight / climbTime;
+                case PlayerStates.GrappleSwing:
+                    velocity = Vector2.zero;
+                    break;
+
+                //case PlayerStates.GrappleThrow:
+                //    //Gravity but no horizontal input
+                //    ApplyGravity();
                 //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 //    break;
-        }
+
+                case PlayerStates.OnWall:
+                    velocity.x = 0;
+                    velocity.y = wallVelocity;
+                    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                    break;
+
+                    //case PlayerStates.WallClimbing:
+                    //    velocity.y = climbHeight / climbTime;
+                    //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                    //    break;
+            }
     }
 
     /// <summary>
@@ -423,51 +423,6 @@ public class PlayerMovement : MonoBehaviour
         visualsGO.transform.rotation = Quaternion.Euler(0, yRotation, zRotation);
         //rb.rotation = zRotation;
         //transform.rotation = Quaternion.Euler(0, yRotation, rb.rotation);
-    }
-
-    private void StartAcceleration(float playerMoveInput)
-    {
-        LeanTween.cancel(accelerationTweenId);
-
-        if (playerMoveInput == 0)
-        {
-            accelerationTweenId = LeanTween.value(accelerationValue, 0, Mathf.Abs(accelerationValue) * accelerationTime)
-                //.setEaseOutQuad()
-                .setOnUpdate((float val) =>
-                {
-                    accelerationValue = val;
-                }).id;
-        }
-
-        else if (playerMoveInput < 0 && moveSpeed > 0 || playerMoveInput > 0 && moveSpeed < 0)
-        {
-            accelerationTweenId = LeanTween.value(accelerationValue, 0, (Mathf.Abs(accelerationValue) * accelerationTime)/4)
-                //.setEaseOutQuad()
-                .setOnUpdate((float val) =>
-                {
-                    accelerationValue = val;
-                })
-                .setOnComplete(() =>
-                {
-                    accelerationTweenId = LeanTween.value(accelerationValue, 1, (accelerationTime - Mathf.Abs(accelerationValue) * accelerationTime)/4)
-                    .setEaseOutQuad()
-                    .setOnUpdate((float val) =>
-                    {
-                        accelerationValue = playerMoveInput < 0 ? -val : val;
-                    }).id;
-                }).id;
-            
-        }
-
-        else
-        {
-            accelerationTweenId = LeanTween.value(accelerationValue, 1, accelerationTime - Mathf.Abs(accelerationValue) * accelerationTime)
-                .setEaseOutQuad()
-                .setOnUpdate((float val) =>
-                {
-                    accelerationValue = playerMoveInput < 0 ? -val : val;
-                }).id;
-        }
     }
 
     private void StopAcceleration()
@@ -635,7 +590,7 @@ public class PlayerMovement : MonoBehaviour
 
         return returnHitLeft ? hitLeft : hitRight;
     }
-
+    
     private void OnWallHit(RaycastHit2D hitLeft, RaycastHit2D hitRight)
      {
         RaycastHit2D correctHit;
@@ -746,7 +701,7 @@ public class PlayerMovement : MonoBehaviour
         {
             playerState = PlayerStates.InAir;
             velocity.y += value * jumpForce;
-            StartCoroutine(SetCannotGoOnWallTimer(banWallAfterJumpTimeSec));
+            //StartCoroutine(SetCannotGoOnWallTimer(banWallAfterJumpTimeSec));
         }
         else if (!keyPressed && playerState == PlayerStates.InAir) //let go of jump
         {
@@ -896,7 +851,7 @@ public class PlayerMovement : MonoBehaviour
         velocity.y = additionalVelocity.y;
         if (wallJump)
         {
-            StartCoroutine(SetBanMoveTimer(!onRightWall, onRightWall, 0.1f));
+            StartCoroutine(SetBanMoveTimer(!onRightWall, wallJumpInputBanTime));
         }
         StartCoroutine(SetCannotGoOnWallTimer(0.05f));
         playerState = PlayerStates.InAir;
@@ -923,11 +878,6 @@ public class PlayerMovement : MonoBehaviour
         LeaveWall(true);
         ResetAirAbilities();
         //StopAcceleration();
-
-        if (directionalInput.x != 0)
-        {
-            StartAcceleration(directionalInput.x);
-        }
         //StartAcceleration(playerMoveInput.x);
         //additionalVelocity = wallJumpVelocity;
         //additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
