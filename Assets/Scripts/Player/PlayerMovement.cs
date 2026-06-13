@@ -88,6 +88,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Acceleration")]
     [SerializeField] private float accelerationTime = 0.5f; //time to get to walkSpeed
     [SerializeField] private float airResistance = 1f; //units a second;
+    [SerializeField] private float neutralAirResistance = 0.1f;
     [SerializeField] private float groundFriction = 5f;
     [SerializeField] private bool instantAccelerate = false;
     [SerializeField] private bool instantTurn = true;
@@ -274,7 +275,7 @@ public class PlayerMovement : MonoBehaviour
 
                     if (Mathf.Abs(velocity.x) > walkSpeed)
                     {
-                        velocity.x -= airResistance * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
+                        velocity.x -= airResistance * Mathf.Sign(velocity.x);
 
                         if (Mathf.Sign(playerInput) != Mathf.Sign(velocity.x) && playerInput != 0)
                         {
@@ -295,8 +296,7 @@ public class PlayerMovement : MonoBehaviour
                         {
                             if (velocity.x != 0)
                             {
-                                float airResistanceRate = airResistance * Time.fixedDeltaTime;
-                                velocity.x = velocity.x > 0 ? Mathf.Clamp(velocity.x - airResistanceRate, 0, walkSpeed) : Mathf.Clamp(velocity.x + airResistanceRate, -walkSpeed, 0);
+                                velocity.x = velocity.x > 0 ? Mathf.Clamp(velocity.x - neutralAirResistance, 0, walkSpeed) : Mathf.Clamp(velocity.x + neutralAirResistance, -walkSpeed, 0);
                             }
                         }
                     }
@@ -441,8 +441,10 @@ public class PlayerMovement : MonoBehaviour
 
         bool canGround = groundedHit && !gmScript.groundedGrapple;
         bool wallHit = leftWallHit || rightWallHit;
+
         bool playerIsCorrectStateforWall = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwing;
         bool playerHasCorrectDirectionalInput = (leftWallHit && directionalInput.x < 0) || (rightWallHit && directionalInput.x > 0);
+        bool playerHasCorrectVelocity = (Mathf.Sign(velocity.x) == 1 && rightWallHit) || (Mathf.Sign(velocity.x) == -1 && leftWallHit);
 
         if (canGround && wallHit) //both ground and wall hit
         {
@@ -456,7 +458,7 @@ public class PlayerMovement : MonoBehaviour
         {
             BecomeGrounded(groundedHit);
         }
-        else if (wallHit && !canGround && playerIsCorrectStateforWall && (playerHasCorrectDirectionalInput || !requireWallCorrectDirectionalInput) && canGoOnWall) //wall hit and player can go on wall
+        else if (wallHit && !canGround && playerIsCorrectStateforWall && (playerHasCorrectDirectionalInput || !requireWallCorrectDirectionalInput || playerHasCorrectVelocity) && canGoOnWall && !CheckForHeadhit()) //wall hit and player can go on wall
         {
             OnWallHit(leftWallHit, rightWallHit);
         }

@@ -666,7 +666,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 17.83615, y: -2.94395, z: -10}
+  m_LocalPosition: {x: 17.20615, y: -2.83395, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1834,10 +1834,7 @@ MonoBehaviour:
   playerDirection: 1
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
-  banMoveRight: 0
-  banMoveLeft: 0
   playerCannotMove: 0
-  moveSpeed: 0
   playerRaycastLayerMask:
     serializedVersion: 2
     m_Bits: 64
@@ -1850,6 +1847,7 @@ MonoBehaviour:
   groundSnapVertical: 0.1
   groundSnapCorrection: 0.1
   directionalInput: {x: 0, y: 0}
+  inputBan: 0
   jumpKeyDown: 0
   grappleKeyDown: 0
   grapplePullKeyDown: 0
@@ -1862,10 +1860,12 @@ MonoBehaviour:
   banWallAfterJumpTimeSec: 0.2
   accelerationTime: 0.1
   airResistance: 1
+  neutralAirResistance: 0.1
   groundFriction: 5
   instantAccelerate: 0
   instantTurn: 1
   accelerationValue: 0
+  inputBanTime: 0.1
   onRightWall: 0
   wallVelocity: 0
   canGoOnWall: 1
@@ -1876,6 +1876,7 @@ MonoBehaviour:
   climbHeight: 3
   climbTime: 0.2
   wallJumpVelocity: {x: 12.5, y: 10}
+  wallJumpInputBanTime: 0.2
   vaultTime: 0.25
   disableVault: 1
   PGVxDecayFactor: 0.1
@@ -2201,7 +2202,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.75, y: -0.59, z: 0}
+  m_LocalPosition: {x: -3.38, y: -0.48, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -2224,10 +2225,7 @@ MonoBehaviour:
   playerDirection: 1
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
-  banMoveRight: 0
-  banMoveLeft: 0
   playerCannotMove: 0
-  moveSpeed: 0
   playerRaycastLayerMask:
     serializedVersion: 2
     m_Bits: 64
@@ -2240,6 +2238,7 @@ MonoBehaviour:
   groundSnapVertical: 0.05
   groundSnapCorrection: 0.15
   directionalInput: {x: 0, y: 0}
+  inputBan: 0
   jumpKeyDown: 0
   grappleKeyDown: 0
   grapplePullKeyDown: 0
@@ -2251,11 +2250,13 @@ MonoBehaviour:
   terminalVelocity: -25
   banWallAfterJumpTimeSec: 0.2
   accelerationTime: 0.1
-  airResistance: 1
+  airResistance: 0.1
+  neutralAirResistance: 0.1
   groundFriction: 50
   instantAccelerate: 0
   instantTurn: 1
   accelerationValue: 0
+  inputBanTime: 0.1
   onRightWall: 0
   wallVelocity: 0
   canGoOnWall: 1
@@ -2265,7 +2266,8 @@ MonoBehaviour:
   slideSpeedTweenTime: 0.2
   climbHeight: 3
   climbTime: 0.2
-  wallJumpVelocity: {x: 12.5, y: 10}
+  wallJumpVelocity: {x: 10, y: 10}
+  wallJumpInputBanTime: 0.15
   vaultTime: 0.25
   disableVault: 1
   PGVxDecayFactor: 0.1
@@ -3439,7 +3441,7 @@ Transform:
   m_GameObject: {fileID: 1533811930}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 17.83615, y: -2.94395, z: -10}
+  m_LocalPosition: {x: 17.20615, y: -2.83395, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3577,7 +3579,7 @@ Transform:
   m_GameObject: {fileID: 1562256273}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -13.8, y: 1.67, z: 0}
+  m_LocalPosition: {x: -12.23, y: 0.93, z: 0}
   m_LocalScale: {x: 16.72924, y: 10.763935, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
