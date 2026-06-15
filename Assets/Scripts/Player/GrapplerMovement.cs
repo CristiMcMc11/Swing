@@ -1,4 +1,6 @@
 using System.Collections;
+using TMPro;
+using UnityEditor.Rendering.Analytics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using static PlayerMovement;
@@ -14,6 +16,7 @@ public class GrapplerMovement : MonoBehaviour
 
     [Header("Grappler Runtime")]
     [SerializeField] private Vector2 directionalInput;
+    [SerializeField] private Vector3 mousePos;
     [SerializeField] private float grapplePointDistance;
     [SerializeField] private Vector2 grapplePoint;
     [SerializeField] private Vector2 grapplePullPosition = Vector2.zero;
@@ -31,6 +34,7 @@ public class GrapplerMovement : MonoBehaviour
     public bool grapplePullOnStartGrappling = false;
 
     [Header("Grappler Settables")]
+    public bool mouseMode = false;
     [SerializeField] private float maxGrapples = 1;
     [SerializeField] private float currGrapples = 0;
     public bool canGrapple => currGrapples < maxGrapples;
@@ -56,6 +60,27 @@ public class GrapplerMovement : MonoBehaviour
         lineRenderer = transform.Find("Visuals").GetComponent<LineRenderer>();
         joint = GetComponent<DistanceJoint2D>();
         joint.enabled = false;
+    }
+
+    private void Update()
+    {
+        mousePos = GetComponent<PlayerInput>().actions["Mouse Position"].ReadValue<Vector2>();
+        mousePos.z = 10;
+        print(Camera.main.ScreenToWorldPoint(mousePos));
+        if (pmScript.playerState == PlayerStates.GrapplePrep)
+        {
+            grappleHead.SetActive(true);
+            bool burner = false; //BANDAID SOLUTION
+            if (mouseMode)
+            {
+                grappleHead.transform.position = FindMouseGrapplePoint(ref burner);
+            }
+            else
+            {  
+                grappleHead.transform.position = FindGrapplePoint(ref burner, directionalInput);
+            }
+            
+        }
     }
 
     private void LateUpdate()
@@ -93,7 +118,15 @@ public class GrapplerMovement : MonoBehaviour
             directionalInput = pmScript.playerDirection == PlayerDirection.Right ? Vector2.right : Vector2.left;
         }
 
-        grapplePoint = FindGrapplePoint(ref grappleHit, directionalInput);
+        if (mouseMode)
+        {
+            grapplePoint = FindMouseGrapplePoint(ref grappleHit);
+        }
+        else
+        {
+            grapplePoint = FindGrapplePoint(ref grappleHit, directionalInput);
+        }
+            
         float tempDistance = Vector2.Distance(rb.position, grapplePoint);
         float time = CalculateGrappleThrowTime(tempDistance, grappleHit);
 
@@ -168,6 +201,24 @@ public class GrapplerMovement : MonoBehaviour
         //3. Both missed and the grapple misses
         grappleHit = false;
         return rb.position + directionalInput * maxDistance;
+    }
+
+    private Vector2 FindMouseGrapplePoint(ref bool grappleHit)
+    {
+        Vector2 point = Camera.main.ScreenToWorldPoint(mousePos);
+
+        //1. Raycast from player to mouse position at the max grapple distance
+        float distanceAdjustFactor = maxDistance - (rb.position - point).magnitude;
+        RaycastHit2D hit = rb.RaycastFromPlayer(point, pmScript.playerRaycastLayerMask, distanceAdjustFactor);
+        if (hit)
+        {
+            return hit.point;
+        }
+        else
+        {
+            grappleHit = false;
+            return (point - rb.position).normalized * maxDistance;
+        }
     }
 
     #endregion

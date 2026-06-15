@@ -6,7 +6,7 @@ public static class HelperMethods
     /// <summary>
     /// Sends a raycast at the desired position and direction.
     /// </summary>
-    /// <param name="rb"></param>
+    /// <param name="offset"> The offset from the player's position that the starting position of the raycast should be at</param>
     /// <param name="direction"></param>
     /// <param name="distance"></param>
     /// <param name="layerMask"></param>
@@ -14,6 +14,21 @@ public static class HelperMethods
     public static RaycastHit2D Raycast(this Rigidbody2D rb, Vector2 offset, Vector2 direction, float distance, int layerMask)
     {
         RaycastHit2D hit = Physics2D.Raycast(rb.position + offset, direction, distance, layerMask);
+        return hit;
+    }
+
+    /// <summary>
+    /// Sends a raycast at the desired position and direction.
+    /// </summary>
+    /// <param name="rb"></param>
+    /// <param name="point"> The ending point of the raycast </param>
+    /// <param name="layerMask"></param>
+    /// <returns> The RaycastHit2D hit. </returns>
+    public static RaycastHit2D RaycastFromPlayer(this Rigidbody2D rb, Vector2 point, int layerMask, float additionalDistance = 0)
+    {
+        Vector2 direction = (point - rb.position).normalized;
+        float distance = (point - rb.position).magnitude + additionalDistance;
+        RaycastHit2D hit = Physics2D.Raycast(rb.position, direction, distance, layerMask);
         return hit;
     }
 
