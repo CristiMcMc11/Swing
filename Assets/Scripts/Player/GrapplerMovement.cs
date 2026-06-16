@@ -66,7 +66,6 @@ public class GrapplerMovement : MonoBehaviour
     {
         mousePos = GetComponent<PlayerInput>().actions["Mouse Position"].ReadValue<Vector2>();
         mousePos.z = 10;
-        print(Camera.main.ScreenToWorldPoint(mousePos));
         if (pmScript.playerState == PlayerStates.GrapplePrep)
         {
             grappleHead.SetActive(true);
