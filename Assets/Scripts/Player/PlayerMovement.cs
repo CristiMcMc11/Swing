@@ -74,24 +74,24 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool grapplePullKeyDown = false;
 
     [Header("Ground")]
-    [SerializeField] private float walkSpeed = 10;
+    public float walkSpeed = 10;
     [SerializeField] private bool facingRight = true;
     [SerializeField] private Vector2 newPos = Vector2.zero;
 
     [Header("Jumping/Air")]
-    [SerializeField] private float maxJumpHeight = 5f;
-    [SerializeField] private float maxJumpTime = 1f; 
-    [SerializeField] private float terminalVelocity = -20;
+    public float maxJumpHeight = 5f;
+    public float maxJumpTime = 1f; 
+    public float terminalVelocity = -20;
     [SerializeField] private float banWallAfterJumpTimeSec = 0.2f;
     public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
     public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
 
     [Header("Acceleration")]
-    [SerializeField] private float accelerationTime = 0.5f; //time to get to walkSpeed
-    [SerializeField] private float airResistance = 1f; //units a second;
+    public float accelerationTime = 0.5f; //time to get to walkSpeed
+    public float airResistance = 1f; //units a second;
     [SerializeField] private float neutralAirResistance = 0.1f;
-    [SerializeField] private float groundFriction = 5f;
-    [SerializeField] private bool instantAccelerate = false;
+    public float groundFriction = 5f;
+    public bool instantAccelerate = false;
     [SerializeField] private bool instantTurn = true;
     [SerializeField] private float accelerationValue;
     [SerializeField] private float inputBanTime = 0.1f;
@@ -104,12 +104,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool canGoOnWall = true;
     [SerializeField] private bool isWallClimbing = true;
 
-    [SerializeField] private float minSlideSpeed = 0.2f;
-    [SerializeField] private float maxSlideSpeed = 1f;
-    [SerializeField] private float slideSpeedTweenTime = 0.4f;
+    public float minSlideSpeed = 0.2f;
+    public float maxSlideSpeed = 1f;
+    public float slideSpeedTweenTime = 0.4f;
     [SerializeField] private float climbHeight = 15;
     [SerializeField] private float climbTime = 0.1f;
-    [SerializeField] private Vector2 wallJumpVelocity = new Vector2(10, 10);
+    public Vector2 wallJumpVelocity = new Vector2(10, 10);
     [SerializeField] private float wallJumpInputBanTime = 0.2f;
 
     [SerializeField] private float vaultTime = 0.25f;
@@ -125,7 +125,7 @@ public class PlayerMovement : MonoBehaviour
     private Animator animator;
 
     [Header("testing/misc")]
-    [SerializeField] private float gameSpeed;
+    public float gameSpeed;
     #endregion
 
     private void Awake()
