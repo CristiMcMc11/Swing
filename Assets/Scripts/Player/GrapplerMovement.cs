@@ -43,8 +43,9 @@ public class GrapplerMovement : MonoBehaviour
 
     [SerializeField] private float leniency = 5f;
     [SerializeField] private float maxThrowTime = 0.5f;
-    [SerializeField] private float pullSpeed = 5f;
+    public float pullSpeed = 5f;
     [SerializeField] private float grappleEntrySpeedThreshold = 0.05f;
+    public float grappleVelocityMultiplier = 1.1f;
 
 
     private void OnDrawGizmos()
@@ -69,14 +70,15 @@ public class GrapplerMovement : MonoBehaviour
         if (pmScript.playerState == PlayerStates.GrapplePrep)
         {
             grappleHead.SetActive(true);
-            bool burner = false; //BANDAID SOLUTION
+            bool grappleHit = true; //BANDAID SOLUTION
             if (mouseMode)
             {
-                grappleHead.transform.position = FindMouseGrapplePoint(ref burner);
+                grappleHead.transform.position = FindMouseGrapplePoint(ref grappleHit);
+                grappleHead.GetComponent<SpriteRenderer>().color = grappleHit ? Color.black : Color.red;
             }
             else
             {  
-                grappleHead.transform.position = FindGrapplePoint(ref burner, directionalInput);
+                grappleHead.transform.position = FindGrapplePoint(ref grappleHit, directionalInput);
             }
             
         }
@@ -167,6 +169,7 @@ public class GrapplerMovement : MonoBehaviour
         {
             yield return new WaitForSeconds(time / 2);
             groundedGrapple = false;
+            grapplePullOnStartGrappling = false;
             pmScript.playerState = PlayerMovement.PlayerStates.InAir;
         }
     }
@@ -216,7 +219,7 @@ public class GrapplerMovement : MonoBehaviour
         else
         {
             grappleHit = false;
-            return (point - rb.position).normalized * maxDistance;
+            return point;
         }
     }
 
@@ -242,7 +245,7 @@ public class GrapplerMovement : MonoBehaviour
     public Vector2 JumpOutOfGrapple()
     {
         pmScript.playerState = PlayerStates.InAir;
-        return rb.linearVelocity;
+        return rb.linearVelocity * grappleVelocityMultiplier;
     }
 
     public void CancelGrappleSwing()
