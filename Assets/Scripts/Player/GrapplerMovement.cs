@@ -1,6 +1,4 @@
 using System.Collections;
-using TMPro;
-using UnityEditor.Rendering.Analytics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using static PlayerMovement;
