@@ -197,14 +197,14 @@ public class GrapplerMovement : MonoBehaviour
 
         if (wallHit && grappleState == GrappleStates.GrapplePull)
         {
-            if (CheckForValidWallHold(leftWallHit ? leftWallHit : rightWallHit) && grapplePullKeyDown)
-            {
-                EnterWallHold(leftWallHit);
-            }
-            else
-            {
-                CancelGrapplePull();
-            }
+            //if (CheckForValidWallHold(leftWallHit ? leftWallHit : rightWallHit) && grapplePullKeyDown)
+            //{
+            //    EnterWallHold(leftWallHit);
+            //}
+            //else
+            //{
+            //    CancelGrapplePull();
+            //}
         }
         else if (canGround && grappleState == GrappleStates.GrapplePull)
         {
@@ -212,8 +212,8 @@ public class GrapplerMovement : MonoBehaviour
         }
         else if (grappleState == GrappleStates.GrappleSwing && wallHit)
         {
-            pmScript.OnWallHit(leftWallHit, rightWallHit);
-            CancelGrappleSwing();
+            //pmScript.OnWallHit(leftWallHit, rightWallHit);
+            //CancelGrappleSwing();
         }
     }
 
@@ -544,23 +544,6 @@ public class GrapplerMovement : MonoBehaviour
         {
             return true;
         }
-        return false;
-    }
-
-    private bool TouchingGround()
-    {
-        BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
-        Vector2 size = new Vector2(playerCollider.size.x, playerCollider.size.y);
-        Collider2D[] hitColliders = Physics2D.OverlapBoxAll(rb.position, hitTerrainRaycastSize, 0);
-
-        foreach (Collider2D hit in hitColliders)
-        {
-            if (hit.gameObject.layer == LayerMask.NameToLayer("Terrain"))
-            {
-                return true;
-            }
-        }
-
         return false;
     }
 

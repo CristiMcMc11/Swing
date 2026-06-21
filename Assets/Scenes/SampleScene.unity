@@ -7693,7 +7693,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 11.836149, y: -2.7339501, z: -10}
+  m_LocalPosition: {x: 42.57615, y: 10.50605, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16519,6 +16519,8 @@ MonoBehaviour:
   climbTime: 0.2
   wallJumpVelocity: {x: 12.5, y: 10}
   wallJumpInputBanTime: 0.2
+  oppositeInputTime: 0.3
+  timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
   PGVxDecayFactor: 0.1
@@ -17329,7 +17331,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.75, y: -0.38, z: 0}
+  m_LocalPosition: {x: 21.99, y: 12.86, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -17393,6 +17395,8 @@ MonoBehaviour:
   climbTime: 0.2
   wallJumpVelocity: {x: 13, y: 10}
   wallJumpInputBanTime: 0.15
+  oppositeInputTime: 0.3
+  timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
   PGVxDecayFactor: 0.1
@@ -23038,7 +23042,7 @@ Transform:
   m_GameObject: {fileID: 1533811930}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 11.836149, y: -2.7339501, z: -10}
+  m_LocalPosition: {x: 42.57615, y: 10.50605, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

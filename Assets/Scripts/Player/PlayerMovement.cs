@@ -120,8 +120,10 @@ public class PlayerMovement : MonoBehaviour
     public Vector2 wallJumpVelocity = new Vector2(10, 10);
     [SerializeField] private float wallJumpInputBanTime = 0.2f;
 
-    [SerializeField] private float vaultTime = 0.25f;
+    [SerializeField] private float oppositeInputTime = 0.3f;
+    [SerializeField] private bool timingOppositeInput = false;
 
+    [SerializeField] private float vaultTime = 0.25f;
     public bool disableVault = false;
 
     [Header("Extra Velocity")]
@@ -453,9 +455,9 @@ public class PlayerMovement : MonoBehaviour
             RaycastHit2D correctHit = onRightWall ? rightWallHit : leftWallHit;
             //CheckForVault(correctHit, onRightWall);
         }
-        else if (PlayerState == PlayerStates.OnWall && ((onRightWall && directionalInput.x < 0) || (!onRightWall && directionalInput.x > 0))) //checking whether input doesn't match the wall direction
+        else if (PlayerState == PlayerStates.OnWall && ((onRightWall && directionalInput.x < 0) || (!onRightWall && directionalInput.x > 0)) && !timingOppositeInput) //checking whether input doesn't match the wall direction
         {
-            LeaveWall(false);
+            StartCoroutine(StartOppositeInputTimer());
         }
         else if (!wallHit && PlayerState == PlayerStates.OnWall) //fell off the wall
         {
@@ -469,7 +471,7 @@ public class PlayerMovement : MonoBehaviour
         {
             BecomeGrounded(groundHit);
         }
-        else if ((groundHit.point.x > transform.position.x && rightWallHit) || (groundHit.point.x < transform.position.x && leftWallHit))
+        else if (((groundHit.point.x > transform.position.x && rightWallHit) || (groundHit.point.x < transform.position.x && leftWallHit)))
         {
             if (PlayerState == PlayerStates.InAir && playerHasCorrectDirectionalInput)
             {
@@ -540,7 +542,7 @@ public class PlayerMovement : MonoBehaviour
         Vector2 offset = new Vector2(0, groundBoxCastYOffset);
         RaycastHit2D hit = rb.BoxCast(offset, new Vector2(groundBoxCastLength, 0.1f), 0, Vector2.up, 0, playerRaycastLayerMask);
 
-        if (hit && velocity.y > 0)
+        if (hit && velocity.y > 0 && !(CheckForWallTouch(true) || CheckForWallTouch(false)))
         {
             velocity.y = 0;
             additionalVelocity.y = 0;
@@ -579,6 +581,12 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
+        if (velocity.y >= 0) //cuz you can't wall jump if moving upwards
+        {
+            velocity.x = 0;
+            return;
+        }
+
         if (playerDirection == PlayerDirection.Left && onRightWall)
         {
             playerDirection = PlayerDirection.Right;
@@ -588,7 +596,7 @@ public class PlayerMovement : MonoBehaviour
             playerDirection = PlayerDirection.Left;
         }
 
-            OffsetWallPlayerPosition(correctHit, onRightWall);
+        OffsetWallPlayerPosition(correctHit, onRightWall);
         EnterWall();
     }
 
@@ -677,30 +685,6 @@ public class PlayerMovement : MonoBehaviour
         velocity.y = Mathf.Max(velocity.y, terminalVelocity);
     }
 
-    private void DecayAdditionalVelocity()
-    {
-        if (PlayerState != PlayerStates.InAir)
-        {
-            additionalVelocity = Vector2.zero;
-        }
-
-        if (additionalVelocity.magnitude > 0)
-        {
-            additionalVelocity.y /= PGVyDecayFactor;
-            additionalVelocity.y = additionalVelocity.y < 0.01f ? 0 : additionalVelocity.y;
-
-            additionalVelocity.x = additionalVelocity.x < 0 ? Mathf.Min(additionalVelocity.x + PGVxDecayFactor, 0) : Mathf.Max(additionalVelocity.x - PGVxDecayFactor, 0);
-            if ((directionalInput.x < 0 && additionalVelocity.x > 0) || (directionalInput.x > 0 && additionalVelocity.x < 0))
-            {
-                //Time.timeScale = 0.25f; 
-                additionalVelocity.x += accelerationValue;
-                //StopAcceleration();
-            }
-
-            //postGrappleVelocity = new Vector2(Mathf.Max(postGrappleVelocity.x, 0), Mathf.Max(postGrappleVelocity.y, 0));
-        }
-    }
-
     #endregion
 
     #region On Wall
@@ -737,21 +721,31 @@ public class PlayerMovement : MonoBehaviour
         PlayerState = PlayerStates.InAir;
     }
 
-    //private IEnumerator WallClimb()
-    //{
-    //    LeanTween.cancel(gameObject);
-    //    playerState = PlayerStates.WallClimb;
-    //    StartCoroutine(SetBanMoveTimer(onRightWall, !onRightWall, climbTime));
+    /// <summary>
+    /// Starts a timer of oppositeInputTime seconds where player must hold the opposite direction input to the wallthe whole time. 
+    /// If the player does, they will leave the wall
+    /// </summary>
+    private IEnumerator StartOppositeInputTimer()
+    {
+        float startTime = Time.time;
+        bool inputLeft = directionalInput.x < 0 ? true : false;
+        bool completedTimer = true;
+        timingOppositeInput = true;
 
-    //    yield return new WaitForSeconds(climbTime);
+        while (Time.time - startTime <= oppositeInputTime)
+        {
+            if (inputLeft && directionalInput.x > 0 || !inputLeft && directionalInput.x < 0 || directionalInput.x == 0)
+            {
+                timingOppositeInput = false;
+                completedTimer = false;
+                break;
+            }
+            yield return new WaitForSeconds(0.1f);
+        }
 
-    //    if (playerState != PlayerStates.Vault)
-    //    {
-    //        playerState = PlayerStates.OnWall;
-    //        velocity.y = 0;
-    //        TweenWallSlideSpeed();
-    //    }
-    //}
+        if (completedTimer) LeaveWall(false);
+        timingOppositeInput = false;
+    }
 
     private void WallJump()
     {
@@ -779,11 +773,23 @@ public class PlayerMovement : MonoBehaviour
             LeanTween.cancel(gameObject);
         }
 
-        LeanTween.value(-minSlideSpeed, -maxSlideSpeed, slideSpeedTweenTime)
-            .setOnUpdate((float value) =>
-            {
-                wallVelocity = value;
-            });
+        float minSpeed = Mathf.Max(-velocity.y / 2.5f, minSlideSpeed);
+        print(minSpeed);
+        if (minSpeed > maxSlideSpeed)
+        {
+            wallVelocity = -minSpeed;
+        }
+        else
+        {
+            float time = slideSpeedTweenTime / (maxSlideSpeed - minSpeed);
+
+            LeanTween.value(-minSpeed, -maxSlideSpeed, time)
+                .setOnUpdate((float value) =>
+                {
+                    wallVelocity = value;
+                });
+        }
+            
     }
 
     #endregion
