@@ -1,6 +1,9 @@
+using System;
 using System.Collections;
+using NUnit.Framework.Constraints;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
 using static PlayerMovement;
 
 public class GrapplerMovement : MonoBehaviour
@@ -12,12 +15,24 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private Vector2 hitTerrainRaycastSize;
     public GameObject grappleHead;
 
+    public enum GrappleStates
+    {
+        None,
+        GrapplePrep,
+        GrappleThrow,
+        GrappleSwing,
+        GrapplePull,
+        WallHold
+    }
+    [SerializeField] private GrappleStates grappleState = GrappleStates.None;
+
     [Header("Grappler Runtime")]
-    [SerializeField] private Vector2 directionalInput;
+    [SerializeField] private Vector2 grapplerDirectionalInput;
     [SerializeField] private Vector3 mousePos;
     [SerializeField] private float grapplePointDistance;
     [SerializeField] private Vector2 grapplePoint;
     [SerializeField] private Vector2 grapplePullPosition = Vector2.zero;
+    [SerializeField] private Vector2 wallHoldPos = Vector2.zero;
 
     [SerializeField] private Vector2 directionFromPrevPoint;
     [SerializeField] public float grappleSpeed; //MAKE GET; PRIVATE SET
@@ -30,6 +45,9 @@ public class GrapplerMovement : MonoBehaviour
     public bool groundedGrapple = false;
 
     public bool grapplePullOnStartGrappling = false;
+
+    [SerializeField] private bool grappleKeyDown = false;
+    [SerializeField] private bool grapplePullKeyDown = false;
 
     [Header("Grappler Settables")]
     public bool mouseMode = false;
@@ -49,7 +67,7 @@ public class GrapplerMovement : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.azure;
-        Gizmos.DrawWireCube(transform.position, new Vector2(leniency, maxDistance) * directionalInput);
+        Gizmos.DrawWireCube(transform.position, new Vector2(leniency, maxDistance) * grapplerDirectionalInput);
     }
 
     private void Awake()
@@ -65,7 +83,7 @@ public class GrapplerMovement : MonoBehaviour
     {
         mousePos = GetComponent<PlayerInput>().actions["Mouse Position"].ReadValue<Vector2>();
         mousePos.z = 10;
-        if (pmScript.playerState == PlayerStates.GrapplePrep)
+        if (grappleState == GrappleStates.GrapplePrep)
         {
             grappleHead.SetActive(true);
             bool grappleHit = true; //BANDAID SOLUTION
@@ -76,15 +94,28 @@ public class GrapplerMovement : MonoBehaviour
             }
             else
             {  
-                grappleHead.transform.position = FindGrapplePoint(ref grappleHit, directionalInput);
+                grappleHead.transform.position = FindGrapplePoint(ref grappleHit, grapplerDirectionalInput);
             }
-            
         }
+        else if (grappleState == GrappleStates.GrappleThrow || grappleState == GrappleStates.GrappleSwing)
+        {
+            grappleHead.transform.position = grapplePoint;
+        }
+        else if (grappleState == GrappleStates.None)
+        {
+            grappleHead.SetActive(false);
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        FindGrapplerRotation();
     }
 
     private void LateUpdate()
     {
-        if (pmScript.playerState == PlayerStates.GrappleSwing || pmScript.playerState == PlayerStates.GrapplePull)
+        FindPlayerState();
+        if (grappleState == GrappleStates.GrappleSwing || grappleState == GrappleStates.GrapplePull)
         {
             lineRenderer.enabled = true;
             lineRenderer.SetPosition(0, transform.position);
@@ -97,9 +128,110 @@ public class GrapplerMovement : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        OnPlayerStateChanged += SetGrappleStateToNone;
+    }
+
+    private void OnDisable()
+    {
+        OnPlayerStateChanged -= SetGrappleStateToNone;
+    }
+
+    #region Player Stuff
+
+    public void SetPlayerMovement()
+    {
+        switch (grappleState)
+        {
+            case GrappleStates.GrapplePrep:
+                pmScript.AirMovement();
+                pmScript.MovePlayerByVelocity();
+                break;
+
+            case GrappleStates.GrappleThrow:
+                pmScript.ApplyGravity();
+                pmScript.MovePlayerByVelocity();
+                break;
+
+            case GrappleStates.GrapplePull:
+                rb.MovePosition(GrapplePullMovement());
+                break;
+
+            case GrappleStates.WallHold:
+                rb.MovePosition(wallHoldPos);
+                break;
+        }
+    }
+
+    private void FindGrapplerRotation()
+    {
+        float zRotation = 0;
+        if (grappleState == GrappleStates.GrappleSwing)
+        {
+            pmScript.playerDirection = grappleSpeed < 0 ? PlayerDirection.Left : PlayerDirection.Right;
+            zRotation = GrappleRotationDeg();
+            zRotation = pmScript.playerDirection == PlayerDirection.Right ? zRotation : -zRotation;
+        }
+        else if (grappleState == GrappleStates.GrapplePull)
+        {
+            zRotation = GrappleRotationDeg();
+            zRotation = pmScript.playerDirection == PlayerDirection.Right ? zRotation : -zRotation;
+        }
+
+        int yRotation = pmScript.playerDirection == PlayerDirection.Left ? 180 : 0;
+        transform.Find("Visuals").transform.rotation = Quaternion.Euler(0, yRotation, transform.rotation.z);
+    }
+
+    private void FindPlayerState()
+    {
+        RaycastHit2D groundedHit = pmScript.CheckForGrounded();
+        RaycastHit2D leftWallHit = pmScript.CheckForWallTouch(true);
+        RaycastHit2D rightWallHit = pmScript.CheckForWallTouch(false);
+
+        bool canGround = groundedHit && !groundedGrapple;
+        bool wallHit = leftWallHit || rightWallHit;
+
+        bool playerHasCorrectDirectionalInput = (leftWallHit && grapplerDirectionalInput.x < 0) || (rightWallHit && grapplerDirectionalInput.x > 0);
+        bool playerHasCorrectVelocity = (Mathf.Sign(pmScript.velocity.x) == 1 && rightWallHit) || (Mathf.Sign(pmScript.velocity.x) == -1 && leftWallHit);
+
+        if (wallHit && grappleState == GrappleStates.GrapplePull)
+        {
+            if (CheckForValidWallHold(leftWallHit ? leftWallHit : rightWallHit) && grapplePullKeyDown)
+            {
+                EnterWallHold(leftWallHit);
+            }
+            else
+            {
+                CancelGrapplePull();
+            }
+        }
+        else if (canGround && grappleState == GrappleStates.GrapplePull)
+        {
+            CancelGrapplePull();
+        }
+        else if (grappleState == GrappleStates.GrappleSwing && wallHit)
+        {
+            pmScript.OnWallHit(leftWallHit, rightWallHit);
+            CancelGrappleSwing();
+        }
+    }
+
+    private void SetGrappleStateToNone()
+    {
+        if (pmScript.PlayerState != PlayerStates.ClassMovement) grappleState = GrappleStates.None;
+    }
+
+    private void SetGrappleState(GrappleStates state)
+    {
+        if (state != GrappleStates.None) pmScript.PlayerState = PlayerStates.ClassMovement;
+        grappleState = state;
+    }
+
+    #endregion
     public void SetGrappleDirectionalInput(InputAction.CallbackContext context)
     {
-        directionalInput = context.ReadValue<Vector2>();
+        grapplerDirectionalInput = context.ReadValue<Vector2>();
     }
 
     public void ResetGrapples()
@@ -112,9 +244,9 @@ public class GrapplerMovement : MonoBehaviour
         int layerMask = LayerMask.GetMask("Terrain");
         bool grappleHit = true;
 
-        if (directionalInput == Vector2.zero)
+        if (grapplerDirectionalInput == Vector2.zero)
         {
-            directionalInput = pmScript.playerDirection == PlayerDirection.Right ? Vector2.right : Vector2.left;
+            grapplerDirectionalInput = pmScript.playerDirection == PlayerDirection.Right ? Vector2.right : Vector2.left;
         }
 
         if (mouseMode)
@@ -123,7 +255,7 @@ public class GrapplerMovement : MonoBehaviour
         }
         else
         {
-            grapplePoint = FindGrapplePoint(ref grappleHit, directionalInput);
+            grapplePoint = FindGrapplePoint(ref grappleHit, grapplerDirectionalInput);
         }
             
         float tempDistance = Vector2.Distance(rb.position, grapplePoint);
@@ -168,7 +300,7 @@ public class GrapplerMovement : MonoBehaviour
             yield return new WaitForSeconds(time / 2);
             groundedGrapple = false;
             grapplePullOnStartGrappling = false;
-            pmScript.playerState = PlayerMovement.PlayerStates.InAir;
+            pmScript.PlayerState = PlayerStates.InAir;
         }
     }
 
@@ -237,12 +369,12 @@ public class GrapplerMovement : MonoBehaviour
         //print(pmScript.GetVelocity());
         rb.AddForce(pmScript.GetVelocity(), ForceMode2D.Impulse);
         //grappleSpeed = velocity.x > 0 ? grappleSpeed : -grappleSpeed;
-        pmScript.playerState = PlayerMovement.PlayerStates.GrappleSwing;
+        grappleState = GrappleStates.GrappleSwing;
     }
 
     public Vector2 JumpOutOfGrapple()
     {
-        pmScript.playerState = PlayerStates.InAir;
+        pmScript.PlayerState = PlayerStates.InAir;
         return rb.linearVelocity * grappleVelocityMultiplier;
     }
 
@@ -372,7 +504,7 @@ public class GrapplerMovement : MonoBehaviour
     #region Grapple Pull
     public void StartGrapplePulling()
     {
-        pmScript.playerState = PlayerStates.GrapplePull;
+        grappleState = GrappleStates.GrapplePull;
         grapplePullPosition = Vector2.zero;
         pmScript.ZeroVelocity();
         joint.enabled = false;
@@ -399,7 +531,7 @@ public class GrapplerMovement : MonoBehaviour
             exitVelocity = directionToGrapplePoint * pullSpeed;
         }
 
-        pmScript.playerState = PlayerStates.InAir;
+        pmScript.PlayerState = PlayerStates.InAir;
         transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
         lineRenderer.enabled = false;
         groundedGrapple = false;
@@ -431,6 +563,101 @@ public class GrapplerMovement : MonoBehaviour
 
         return false;
     }
+
+    private void EnterWallHold(bool isLeftWall)
+    {
+        if (pmScript.CheckForHeadhit())
+        {
+            CancelGrapplePull();
+            return;
+        }
+
+        CancelGrapplePull();
+        pmScript.playerDirection = isLeftWall ? PlayerDirection.Left : PlayerDirection.Right;
+        wallHoldPos = rb.position;
+        grappleState = GrappleStates.WallHold;
+    }
+
+    #endregion
+
+    #region Input
+
+    public void OnGrappleInput(InputAction.CallbackContext context)
+    {
+        bool keyPressed = context.ReadValue<float>() == 1;
+        if (keyPressed && (pmScript.PlayerState == PlayerStates.InAir || pmScript.PlayerState == PlayerStates.OnWall) && canGrapple)
+        {
+            SetGrappleState(GrappleStates.GrapplePrep);
+        }
+        else if (!keyPressed && grappleState == GrappleStates.GrapplePrep)
+        {
+            SetGrappleState(GrappleStates.GrappleThrow);
+            StartCoroutine(GrappleThrowCoroutine());
+        }
+        else if (keyPressed && grappleState == GrappleStates.GrappleSwing)
+        {
+            StartGrapplePulling();
+        }
+        else if (!keyPressed && grappleState == GrappleStates.GrapplePull)
+        {
+            pmScript.velocity = Vector2.zero;
+            pmScript.AddForce(CancelGrapplePull() / 1.2f, true);
+            pmScript.FindPlayerState(false);
+        }
+        else if (!keyPressed && grappleState == GrappleStates.WallHold)
+        {
+            pmScript.EnterWall();
+        }
+    }
+
+    public void OnGrapplePullInput(InputAction.CallbackContext context)
+    {
+        bool keyPressed = context.ReadValue<float>() == 1;
+        grapplePullKeyDown = keyPressed;
+
+        if (keyPressed && (pmScript.PlayerState == PlayerStates.InAir || pmScript.PlayerState == PlayerStates.OnWall || pmScript.PlayerState == PlayerStates.Grounded) && canGrapple)
+        {
+            if (pmScript.PlayerState == PlayerStates.Grounded)
+            {
+                groundedGrapple = true;
+            }
+
+            SetGrappleState(GrappleStates.GrappleThrow);
+            StartCoroutine(GrappleThrowCoroutine());
+            grapplePullOnStartGrappling = true;
+        }
+        else if (keyPressed && grappleState == GrappleStates.GrappleSwing)
+        {
+            StartGrapplePulling();
+        }
+        else if (keyPressed && grappleState == GrappleStates.GrappleThrow)
+        {
+            grapplePullOnStartGrappling = true;
+        }
+        else if (!keyPressed && grappleState == GrappleStates.GrapplePull)
+        {
+            pmScript.velocity = Vector2.zero;
+            pmScript.AddForce(CancelGrapplePull() / 1.2f, true);
+            pmScript.FindPlayerState(false);
+        }
+        else if (!keyPressed && grappleState == GrappleStates.WallHold)
+        {
+            pmScript.EnterWall();
+        }
+    }
+
+    public void OnJumpGrappler(InputAction.CallbackContext context)
+    {
+        bool keyPressed = context.ReadValue<float>() == 1;
+        if (keyPressed && grappleState == GrappleStates.GrappleSwing)
+        {
+            pmScript.AddForce(JumpOutOfGrapple(), true);
+        }
+    }
+
+    #endregion
 }
 
-#endregion
+
+
+

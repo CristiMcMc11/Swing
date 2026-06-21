@@ -23,7 +23,7 @@ public class PlayerVisuals : MonoBehaviour
 
     private void SetAnimatorParameters()
     {
-        animator.SetInteger("PlayerState", ((int)pmScript.playerState));
+        animator.SetInteger("PlayerState", ((int)pmScript.PlayerState));
         animator.SetBool("Moving", pmScript.GetVelocity().x != 0);
         animator.SetBool("Falling", pmScript.GetVelocity().y < 0);
     }

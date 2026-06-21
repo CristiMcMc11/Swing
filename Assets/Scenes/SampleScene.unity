@@ -15199,6 +15199,7 @@ GameObject:
   - component: {fileID: 1077071303}
   - component: {fileID: 1077071302}
   - component: {fileID: 1077071301}
+  - component: {fileID: 1077071304}
   m_Layer: 0
   m_Name: Visuals
   m_TagString: Untagged
@@ -15314,6 +15315,33 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!50 &1077071304
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1077071299}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
 --- !u!1 &1083962541
 GameObject:
   m_ObjectHideFlags: 0
@@ -16366,11 +16394,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovementJoint
   hitTerrainRaycastSize: {x: 0, y: 0}
   grappleHead: {fileID: 797302754}
-  directionalInput: {x: 0, y: 0}
+  grappleState: 0
+  grapplerDirectionalInput: {x: 0, y: 0}
   mousePos: {x: 0, y: 0, z: 0}
   grapplePointDistance: 0
   grapplePoint: {x: 0, y: 0}
   grapplePullPosition: {x: 0, y: 0}
+  wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0
   originalAngleSpeed: 0
@@ -16380,6 +16410,8 @@ MonoBehaviour:
   inStillHang: 0
   groundedGrapple: 0
   grapplePullOnStartGrappling: 0
+  grappleKeyDown: 0
+  grapplePullKeyDown: 0
   mouseMode: 0
   maxGrapples: 1
   currGrapples: 0
@@ -16403,9 +16435,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovement
   hitTerrainRaycastSize: {x: 0.8, y: 1.5}
   grappleHead: {fileID: 797302754}
-  directionalInput: {x: 0, y: 0}
+  grappleState: 0
+  grapplerDirectionalInput: {x: 0, y: 0}
+  mousePos: {x: 0, y: 0, z: 0}
   grapplePointDistance: 0
   grapplePoint: {x: 0, y: 0}
+  grapplePullPosition: {x: 0, y: 0}
+  wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0
   originalAngleSpeed: 0
@@ -16413,12 +16449,19 @@ MonoBehaviour:
   movingRight: 1
   canHitWall: 1
   inStillHang: 0
+  groundedGrapple: 0
   grapplePullOnStartGrappling: 0
+  grappleKeyDown: 0
+  grapplePullKeyDown: 0
+  mouseMode: 0
+  maxGrapples: 1
+  currGrapples: 0
   maxDistance: 15
   leniency: 1
   maxThrowTime: 0.25
   pullSpeed: 20
   grappleEntrySpeedThreshold: 0.05
+  grappleVelocityMultiplier: 1.1
 --- !u!114 &1101314327
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16431,7 +16474,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a52f61cc124a9ef4b90bf8f18b385e9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  playerState: 1
+  _playerState: 0
   playerDirection: 1
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
@@ -16450,8 +16493,6 @@ MonoBehaviour:
   directionalInput: {x: 0, y: 0}
   inputBan: 0
   jumpKeyDown: 0
-  grappleKeyDown: 0
-  grapplePullKeyDown: 0
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
@@ -17207,7 +17248,6 @@ GameObject:
   - component: {fileID: 1152884641}
   - component: {fileID: 1152884640}
   - component: {fileID: 1152884642}
-  - component: {fileID: 1152884646}
   - component: {fileID: 1152884650}
   - component: {fileID: 1152884645}
   - component: {fileID: 1152884643}
@@ -17308,7 +17348,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a52f61cc124a9ef4b90bf8f18b385e9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  playerState: 1
+  _playerState: 0
   playerDirection: 1
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
@@ -17327,8 +17367,6 @@ MonoBehaviour:
   directionalInput: {x: 0, y: 0}
   inputBan: 0
   jumpKeyDown: 0
-  grappleKeyDown: 0
-  grapplePullKeyDown: 0
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
@@ -17442,12 +17480,24 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1152884650}
+        m_TargetAssemblyTypeName: GrapplerMovement, Assembly-CSharp
+        m_MethodName: OnJumpGrappler
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: bfdb9c98-9d5c-4ea8-b072-02621a9a4015
     m_ActionName: 'Movement/Jump[/Keyboard/space,/Keyboard/upArrow]'
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1152884642}
-        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
+      - m_Target: {fileID: 1152884650}
+        m_TargetAssemblyTypeName: GrapplerMovement, Assembly-CSharp
         m_MethodName: OnGrappleInput
         m_Mode: 0
         m_Arguments:
@@ -17490,8 +17540,8 @@ MonoBehaviour:
     m_ActionName: 'Movement/Grapple Directional Input[/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow]'
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1152884642}
-        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
+      - m_Target: {fileID: 1152884650}
+        m_TargetAssemblyTypeName: GrapplerMovement, Assembly-CSharp
         m_MethodName: OnGrapplePullInput
         m_Mode: 0
         m_Arguments:
@@ -17513,36 +17563,6 @@ MonoBehaviour:
   m_DefaultActionMap: Movement
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!114 &1152884646
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1152884637}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b451c04f12ee4d46a9cb9b4a33809ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovement
-  hitTerrainRaycastSize: {x: 0.8, y: 1.5}
-  grappleHead: {fileID: 797302754}
-  directionalInput: {x: 0, y: 0}
-  grapplePointDistance: 0
-  grapplePoint: {x: 0, y: 0}
-  directionFromPrevPoint: {x: 0, y: 0}
-  grappleSpeed: 0
-  originalAngleSpeed: 0
-  speedEquationFactor: 0
-  movingRight: 1
-  canHitWall: 1
-  inStillHang: 0
-  grapplePullOnStartGrappling: 0
-  maxDistance: 15
-  leniency: 1
-  maxThrowTime: 0.25
-  pullSpeed: 20
-  grappleEntrySpeedThreshold: 0.05
 --- !u!61 &1152884647
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -17645,11 +17665,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovementJoint
   hitTerrainRaycastSize: {x: 0, y: 0}
   grappleHead: {fileID: 797302754}
-  directionalInput: {x: 0, y: 0}
+  grappleState: 0
+  grapplerDirectionalInput: {x: 0, y: 0}
   mousePos: {x: 0, y: 0, z: 0}
   grapplePointDistance: 0
   grapplePoint: {x: 0, y: 0}
   grapplePullPosition: {x: 0, y: 0}
+  wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0
   originalAngleSpeed: 0
@@ -17659,6 +17681,8 @@ MonoBehaviour:
   inStillHang: 0
   groundedGrapple: 0
   grapplePullOnStartGrappling: 0
+  grappleKeyDown: 0
+  grapplePullKeyDown: 0
   mouseMode: 1
   maxGrapples: 1
   currGrapples: 0

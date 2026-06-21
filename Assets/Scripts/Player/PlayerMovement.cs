@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 
 //using UnityEditorInternal;
@@ -16,11 +17,7 @@ public class PlayerMovement : MonoBehaviour
         OnWall,
         WallClimb,
         Vault,
-        GrappleThrow,
-        GrappleSwing,
-        GrapplePull,
-        WallHold,
-        GrapplePrep
+        ClassMovement
     }
 
     public enum PlayerDirection
@@ -44,11 +41,25 @@ public class PlayerMovement : MonoBehaviour
     private GameObject visualsGO;
     private PlayerVisuals visualsScript;
 
+
+    public static event Action OnPlayerStateChanged;
+    [SerializeField] private PlayerStates _playerState = PlayerStates.Grounded;
+
     [Header("Runtime")]
-    public PlayerStates playerState  = PlayerStates.Grounded;
+    public PlayerStates PlayerState
+    {
+        get => _playerState;
+        set
+        {
+            if (_playerState == value) return;
+            _playerState = value;
+            OnPlayerStateChanged?.Invoke();
+        }
+    }
+
     public PlayerDirection playerDirection = PlayerDirection.Right; //SET GET; PRIVATE SET
 
-    [SerializeField] private Vector2 velocity;
+    [SerializeField] public Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
 
     [SerializeField] private bool playerCannotMove = false;
@@ -70,8 +81,6 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 directionalInput = Vector2.zero;
     [SerializeField] private InputBan inputBan = InputBan.None;
     [SerializeField] private bool jumpKeyDown = false;
-    [SerializeField] private bool grappleKeyDown = false;
-    [SerializeField] private bool grapplePullKeyDown = false;
 
     [Header("Ground")]
     public float walkSpeed = 10;
@@ -98,7 +107,6 @@ public class PlayerMovement : MonoBehaviour
     private int accelerationTweenId;
 
     [Header("Wall")]
-    private Vector2 wallHoldPos;
     [SerializeField] private bool onRightWall;
     [SerializeField] private float wallVelocity = 0f;
     [SerializeField] private bool canGoOnWall = true;
@@ -171,7 +179,7 @@ public class PlayerMovement : MonoBehaviour
         //CheckForWallTouch();
         //CheckForGrounded();
         CheckForHeadhit();
-        DecayAdditionalVelocity();
+        //DecayAdditionalVelocity();
         SetVelocity();
         FindRotations();
         ApplyMovement();
@@ -212,7 +220,7 @@ public class PlayerMovement : MonoBehaviour
         inputBan = InputBan.None;
     }
 
-    private void AddForce(Vector2 force, bool resetVelocityBefore)
+    public void AddForce(Vector2 force, bool resetVelocityBefore)
     {
         velocity = resetVelocityBefore ? Vector2.zero : velocity;
         velocity += force;
@@ -220,34 +228,16 @@ public class PlayerMovement : MonoBehaviour
 
     private void SetVelocity()
     {
-        float accelerationRate = (walkSpeed / accelerationTime) * Time.fixedDeltaTime;
-        if (instantAccelerate) {
-            accelerationRate = Mathf.Max(velocity.x, walkSpeed);
-        }
-
-        float playerInput = directionalInput.x;
-        if (inputBan == InputBan.Left)
-        {
-            playerInput = Mathf.Max(0, playerInput);
-        }
-        else if (inputBan == InputBan.Right)
-        {
-            playerInput = Mathf.Min(0, playerInput);
-        }
-
-        switch (playerState)
+        switch (PlayerState)
         {
             case PlayerStates.Grounded:
-                GroundMovement(playerInput, accelerationRate);
+                GroundMovement();
                 break;
 
             case PlayerStates.InAir:
-                AirMovement(playerInput, accelerationRate);
+                AirMovement();
                 break;
 
-            case PlayerStates.GrappleSwing:
-                velocity = Vector2.zero;
-                break;
 
             //case PlayerStates.GrappleThrow:
             //    //Gravity but no horizontal input
@@ -265,11 +255,6 @@ public class PlayerMovement : MonoBehaviour
             //    velocity.y = climbHeight / climbTime;
             //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
             //    break;
-
-            case PlayerStates.GrapplePrep:
-                AirMovement(playerInput, accelerationRate);
-                break;
-
         }
     }
 
@@ -278,74 +263,33 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void ApplyMovement()
     {
-        switch (playerState)
+        switch (PlayerState)
         {
             case PlayerStates.Grounded:
                 //Get horizontal input to move but don't use gravity
-                //SetHorizontalSpeed(true);
-                //velocity.x = horizontalSpeed;
                 newPos = rb.position + velocity * Time.fixedDeltaTime;
                 rb.MovePosition(newPos);
                 break;
 
             case PlayerStates.InAir:
                 //Use gravity and horizontal input
-
-                //SetHorizontalSpeed(true);
-                //ApplyAdditionalVerticalVelocity();
-                //velocity.x = horizontalSpeed;
                 newPos = rb.position + velocity * Time.fixedDeltaTime;
                 rb.MovePosition(newPos);
                 break;
 
-            case PlayerStates.GrappleThrow:
-                //Gravity but no horizontal input
-                ApplyGravity();
-                rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
-                break;
-
-            case PlayerStates.GrappleSwing:
-                //Special grapple stuff
-
-                Vector2 prevPoint = rb.position;
-                newPos = rb.position + velocity * Time.fixedDeltaTime;
-                //rb.MovePosition(newPos);
-
-                //Vector2 newPosition = gmScript.GrappleSwingMovement();
-                //rb.MovePosition(newPosition);
-
-                //grapplerDirectionFromPrevPoint = (newPosition - prevPoint).normalized;
-                break;
-
-            case PlayerStates.GrapplePull:
-                rb.MovePosition(gmScript.GrapplePullMovement());
-                break;
-
             case PlayerStates.OnWall:
-                //velocity.x = 0;
-                //velocity.y = wallVelocity;
-                //SetHorizontalSpeed(false);
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
-            //case PlayerStates.WallClimb:
-            //    velocity.y = climbHeight / climbTime;
-            //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
-            //    break;
-
-            case PlayerStates.WallHold:
-                rb.MovePosition(wallHoldPos);
-                break;
-
-            case PlayerStates.GrapplePrep:
-                rb.MovePosition(rb.position + (velocity) * Time.fixedDeltaTime);
+            case PlayerStates.ClassMovement:
+                gmScript.SetPlayerMovement(); //TEMP, later make it whatever class is currently equipped
                 break;
         }
     }
 
     private void FindRotations()
     {
-        if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
+        if (PlayerState == PlayerStates.Grounded || PlayerState == PlayerStates.InAir)
         {
             if (velocity.x < 0)
             {
@@ -356,23 +300,8 @@ public class PlayerMovement : MonoBehaviour
                 playerDirection = PlayerDirection.Right;
             }
         }
-
-        float zRotation = 0;
-        if (playerState == PlayerStates.GrappleSwing)
-        {
-            playerDirection = gmScript.grappleSpeed < 0 ? PlayerDirection.Left : PlayerDirection.Right;
-            zRotation = gmScript.GrappleRotationDeg();
-            zRotation = playerDirection == PlayerDirection.Right ? zRotation : -zRotation;
-        }
-        else if (playerState == PlayerStates.GrapplePull)
-        {
-            zRotation = gmScript.GrappleRotationDeg();
-            zRotation = playerDirection == PlayerDirection.Right ? zRotation : -zRotation;
-        }
-
         int yRotation = playerDirection == PlayerDirection.Left ? 180 : 0;
-
-        visualsGO.transform.rotation = Quaternion.Euler(0, yRotation, zRotation);
+        visualsGO.transform.rotation = Quaternion.Euler(0, yRotation, transform.rotation.z);
         //rb.rotation = zRotation;
         //transform.rotation = Quaternion.Euler(0, yRotation, rb.rotation);
     }
@@ -384,8 +313,16 @@ public class PlayerMovement : MonoBehaviour
     }
 
     #region Movement Types
-    private void GroundMovement(float playerInput, float accelerationRate)
+    public void MovePlayerByVelocity()
     {
+        rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+    }
+
+    public void GroundMovement()
+    {
+        float playerInput = FindPlayerInput();
+        float accelerationRate = FindAccelerationRate();
+
         if (Mathf.Abs(velocity.x) > walkSpeed)
         {
             velocity.x -= groundFriction * Mathf.Sign(velocity.x) * Time.fixedDeltaTime;
@@ -418,8 +355,10 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void AirMovement(float playerInput, float accelerationRate)
+    public void AirMovement()
     {
+        float playerInput = FindPlayerInput();
+        float accelerationRate = FindAccelerationRate();
         ApplyGravity();
 
         if (Mathf.Abs(velocity.x) > walkSpeed)
@@ -451,11 +390,35 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private float FindPlayerInput()
+    {
+        float playerInput = directionalInput.x;
+        if (inputBan == InputBan.Left)
+        {
+            playerInput = Mathf.Max(0, playerInput);
+        }
+        else if (inputBan == InputBan.Right)
+        {
+            playerInput = Mathf.Min(0, playerInput);
+        }
+        return playerInput;
+    }
+
+    private float FindAccelerationRate()
+    {
+        float accelerationRate = (walkSpeed / accelerationTime) * Time.fixedDeltaTime;
+        if (instantAccelerate)
+        {
+            accelerationRate = Mathf.Max(velocity.x, walkSpeed);
+        }
+        return accelerationRate;
+    }
+
     #endregion
 
     #region Player States
 
-    private void FindPlayerState(bool requireWallCorrectDirectionalInput)
+    public void FindPlayerState(bool requireWallCorrectDirectionalInput)
     {
         RaycastHit2D groundedHit = CheckForGrounded();
         RaycastHit2D leftWallHit = CheckForWallTouch(true);
@@ -464,7 +427,7 @@ public class PlayerMovement : MonoBehaviour
         bool canGround = groundedHit && !gmScript.groundedGrapple;
         bool wallHit = leftWallHit || rightWallHit;
 
-        bool playerIsCorrectStateforWall = playerState == PlayerStates.InAir || playerState == PlayerStates.GrappleSwing;
+        bool playerIsCorrectStateforWall = PlayerState == PlayerStates.InAir;
         bool playerHasCorrectDirectionalInput = (leftWallHit && directionalInput.x < 0) || (rightWallHit && directionalInput.x > 0);
         bool playerHasCorrectVelocity = (Mathf.Sign(velocity.x) == 1 && rightWallHit) || (Mathf.Sign(velocity.x) == -1 && leftWallHit);
 
@@ -472,11 +435,11 @@ public class PlayerMovement : MonoBehaviour
         {
             OnWallAndGroundHit(groundedHit, leftWallHit, rightWallHit, playerHasCorrectDirectionalInput);
         }
-        else if (!canGround && !wallHit && playerState == PlayerStates.Grounded) //not hitting anything but state is still grounded
+        else if (!canGround && !wallHit && PlayerState == PlayerStates.Grounded) //not hitting anything but state is still grounded
         {
-            playerState = PlayerStates.InAir;
+            PlayerState = PlayerStates.InAir;
         }
-        else if (canGround && playerState == PlayerStates.InAir && velocity.y < 0) //grounded hit while falling
+        else if (canGround && PlayerState == PlayerStates.InAir && velocity.y < 0) //grounded hit while falling
         {
             BecomeGrounded(groundedHit);
         }
@@ -484,36 +447,19 @@ public class PlayerMovement : MonoBehaviour
         {
             OnWallHit(leftWallHit, rightWallHit);
         }
-        else if (wallHit && playerState == PlayerStates.WallClimb) //Checking for a vault while wall climbing
+        else if (wallHit && PlayerState == PlayerStates.WallClimb) //Checking for a vault while wall climbing
         {
             onRightWall = rightWallHit ? true : false;
             RaycastHit2D correctHit = onRightWall ? rightWallHit : leftWallHit;
             //CheckForVault(correctHit, onRightWall);
         }
-        else if (playerState == PlayerStates.OnWall && ((onRightWall && directionalInput.x < 0) || (!onRightWall && directionalInput.x > 0))) //checking whether input doesn't match the wall direction
+        else if (PlayerState == PlayerStates.OnWall && ((onRightWall && directionalInput.x < 0) || (!onRightWall && directionalInput.x > 0))) //checking whether input doesn't match the wall direction
         {
             LeaveWall(false);
         }
-        else if (!wallHit && playerState == PlayerStates.OnWall) //fell off the wall
+        else if (!wallHit && PlayerState == PlayerStates.OnWall) //fell off the wall
         {
             LeaveWall(false);
-        }
-
-        //Grappler Cases
-        else if (wallHit && playerState == PlayerStates.GrapplePull)
-        {
-            if (gmScript.CheckForValidWallHold(leftWallHit ? leftWallHit : rightWallHit) && grapplePullKeyDown)
-            {
-                EnterWallHold(leftWallHit);
-            }
-            else
-            {
-                gmScript.CancelGrapplePull();
-            }
-        }
-        else if (canGround && playerState == PlayerStates.GrapplePull)
-        {
-            gmScript.CancelGrapplePull();
         }
     }
 
@@ -525,12 +471,12 @@ public class PlayerMovement : MonoBehaviour
         }
         else if ((groundHit.point.x > transform.position.x && rightWallHit) || (groundHit.point.x < transform.position.x && leftWallHit))
         {
-            if (playerState == PlayerStates.InAir && playerHasCorrectDirectionalInput)
+            if (PlayerState == PlayerStates.InAir && playerHasCorrectDirectionalInput)
             {
                 OnWallHit(leftWallHit, rightWallHit);
             }
         }
-        else if (Mathf.Round(groundHit.point.x * 100) == Mathf.Round(rb.position.x * 100) && (playerState == PlayerStates.OnWall || (playerState == PlayerStates.InAir && velocity.y < 0)))
+        else if (Mathf.Round(groundHit.point.x * 100) == Mathf.Round(rb.position.x * 100) && (PlayerState == PlayerStates.OnWall || (PlayerState == PlayerStates.InAir && velocity.y < 0)))
             //if groundhit.point.x is basically equal to rb.pos.x AND (playerState is onWall OR (player state is inAir AND moving downwards))
         {
             BecomeGrounded(groundHit);
@@ -555,7 +501,7 @@ public class PlayerMovement : MonoBehaviour
         }
         ResetAirAbilities();
         velocity.y = 0;
-        playerState = PlayerStates.Grounded;
+        PlayerState = PlayerStates.Grounded;
         //transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
     }
 
@@ -615,16 +561,11 @@ public class PlayerMovement : MonoBehaviour
         return returnHitLeft ? hitLeft : hitRight;
     }
     
-    private void OnWallHit(RaycastHit2D hitLeft, RaycastHit2D hitRight)
+    public void OnWallHit(RaycastHit2D hitLeft, RaycastHit2D hitRight)
      {
         RaycastHit2D correctHit;
         onRightWall = hitRight ? true : false;
         correctHit = onRightWall ? hitRight : hitLeft;
-
-        if (playerState == PlayerStates.GrappleSwing)
-        {
-            gmScript.CancelGrappleSwing();
-        }
 
         //if (CheckForVault(correctHit, onRightWall)) //CheckForVault() will call Vault() if it detects a hit
         //{
@@ -634,7 +575,7 @@ public class PlayerMovement : MonoBehaviour
         if (CheckSnapToGround())
         {
             transform.position = new Vector2(transform.position.x, transform.position.y + groundSnapCorrection);
-            playerState = PlayerStates.Grounded;
+            PlayerState = PlayerStates.Grounded;
             return;
         }
 
@@ -649,20 +590,6 @@ public class PlayerMovement : MonoBehaviour
 
             OffsetWallPlayerPosition(correctHit, onRightWall);
         EnterWall();
-    }
-
-    private void EnterWallHold(bool isLeftWall)
-    {
-        if (CheckForHeadhit())
-        {
-            gmScript.CancelGrapplePull();
-            return;
-        }
-
-        gmScript.CancelGrapplePull();
-        playerDirection = isLeftWall ? PlayerDirection.Left : PlayerDirection.Right;
-        wallHoldPos = rb.position;
-        playerState = PlayerStates.WallHold;
     }
 
     private void OffsetWallPlayerPosition(RaycastHit2D hit, bool onTheRight)
@@ -709,7 +636,7 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="context"></param>
     public void OnMove(InputAction.CallbackContext context)
     {
-        if (playerState == PlayerStates.Grounded || playerState == PlayerStates.InAir)
+        if (PlayerState == PlayerStates.Grounded || PlayerState == PlayerStates.InAir)
         {
             //StartAcceleration(playerMoveInput.x);
         }
@@ -720,87 +647,19 @@ public class PlayerMovement : MonoBehaviour
         float value = context.ReadValue<float>();
         bool keyPressed = value == 1;
 
-        if (keyPressed && playerState == PlayerStates.Grounded) //holding/pressed jump
+        if (keyPressed && PlayerState == PlayerStates.Grounded) //holding/pressed jump
         {
-            playerState = PlayerStates.InAir;
+            PlayerState = PlayerStates.InAir;
             velocity.y += value * jumpForce;
             //StartCoroutine(SetCannotGoOnWallTimer(banWallAfterJumpTimeSec));
         }
-        else if (!keyPressed && playerState == PlayerStates.InAir) //let go of jump
+        else if (!keyPressed && PlayerState == PlayerStates.InAir) //let go of jump
         {
             velocity.y = velocity.y < 0 ? velocity.y : velocity.y / 4; //unchanged if velocity.y is negative, and divided by 4 if velocity.y is positive
         }
-        else if (keyPressed && playerState == PlayerStates.GrappleSwing)
-        {
-            AddForce(gmScript.JumpOutOfGrapple(), true);
-        }
-        else if (keyPressed && playerState == PlayerStates.OnWall)
+        else if (keyPressed && PlayerState == PlayerStates.OnWall)
         {
             OnWallJumpInput();
-        }
-    }
-
-    public void OnGrappleInput(InputAction.CallbackContext context)
-    {
-        bool keyPressed = context.ReadValue<float>() == 1;
-        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall) && gmScript.canGrapple)
-        {
-            playerState = PlayerStates.GrapplePrep;
-        }
-        else if (!keyPressed && playerState == PlayerStates.GrapplePrep)
-        {
-            playerState = PlayerStates.GrappleThrow;
-            StartCoroutine(gmScript.GrappleThrowCoroutine());
-        }
-        else if (keyPressed && playerState == PlayerStates.GrappleSwing)
-        {
-            gmScript.StartGrapplePulling();
-        }
-        else if (!keyPressed && playerState == PlayerStates.GrapplePull)
-        {
-            velocity = Vector2.zero;
-            AddForce(gmScript.CancelGrapplePull() / 1.2f, true);
-            FindPlayerState(false);
-        }
-        else if (!keyPressed && playerState == PlayerStates.WallHold)
-        {
-            EnterWall();
-        }
-    }
-
-    public void OnGrapplePullInput(InputAction.CallbackContext context)
-    {
-        bool keyPressed = context.ReadValue<float>() == 1;
-        grapplePullKeyDown = keyPressed;
-
-        if (keyPressed && (playerState == PlayerStates.InAir || playerState == PlayerStates.OnWall || playerState == PlayerStates.Grounded) && gmScript.canGrapple)
-        {
-            if (playerState == PlayerStates.Grounded)
-            {
-                gmScript.groundedGrapple = true;
-            }
-
-            playerState = PlayerStates.GrappleThrow;
-            StartCoroutine(gmScript.GrappleThrowCoroutine());
-            gmScript.grapplePullOnStartGrappling = true;
-        }
-        else if (keyPressed && playerState == PlayerStates.GrappleSwing)
-        {
-            gmScript.StartGrapplePulling();
-        }
-        else if (keyPressed && playerState == PlayerStates.GrappleThrow)
-        {
-            gmScript.grapplePullOnStartGrappling = true;
-        }
-        else if (!keyPressed && playerState == PlayerStates.GrapplePull)
-        {
-            velocity = Vector2.zero;
-            AddForce(gmScript.CancelGrapplePull() / 1.2f, true);
-            FindPlayerState(false);
-        }
-        else if (!keyPressed && playerState == PlayerStates.WallHold)
-        {
-            EnterWall();
         }
     }
 
@@ -812,20 +671,15 @@ public class PlayerMovement : MonoBehaviour
 
     #region Air
 
-    private void ApplyGravity()
+    public void ApplyGravity()
     {
         velocity.y += gravity * Time.deltaTime;
         velocity.y = Mathf.Max(velocity.y, terminalVelocity);
     }
 
-    private void ApplyAdditionalVerticalVelocity()
-    {
-        velocity.y += additionalVelocity.y;
-    }
-
     private void DecayAdditionalVelocity()
     {
-        if (playerState != PlayerStates.InAir)
+        if (PlayerState != PlayerStates.InAir)
         {
             additionalVelocity = Vector2.zero;
         }
@@ -865,9 +719,9 @@ public class PlayerMovement : MonoBehaviour
         WallJump();
     }
 
-    private void EnterWall()
+    public void EnterWall()
     {
-        playerState = PlayerStates.OnWall;
+        PlayerState = PlayerStates.OnWall;
 
         TweenWallSlideSpeed();
     }
@@ -880,7 +734,7 @@ public class PlayerMovement : MonoBehaviour
             StartCoroutine(SetBanMoveTimer(!onRightWall, wallJumpInputBanTime));
         }
         StartCoroutine(SetCannotGoOnWallTimer(0.05f));
-        playerState = PlayerStates.InAir;
+        PlayerState = PlayerStates.InAir;
     }
 
     //private IEnumerator WallClimb()
@@ -965,15 +819,4 @@ public class PlayerMovement : MonoBehaviour
 
     #endregion
 
-    #region Grappler
-
-    public void JumpOutOfGrapple()
-    {
-        playerState = PlayerStates.InAir;
-        Vector2 grappleTransferVelocity = gmScript.SetPostGrappleVelocity();
-        AddForce(grappleTransferVelocity, true);
-        transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
-    }
-
-    #endregion
 }
