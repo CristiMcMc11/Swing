@@ -26,7 +26,7 @@ public class PlayerMovement : MonoBehaviour
         Right
     }
 
-    private enum InputBan
+    public enum InputBan
     {
         None,
         Left,
@@ -206,6 +206,11 @@ public class PlayerMovement : MonoBehaviour
     public void ZeroVelocity()
     {
         velocity = Vector2.zero;
+    }
+
+    public void SetInputBan(InputBan inputBan)
+    {
+        this.inputBan = inputBan;
     }
 
     private void ResetAirAbilities()
@@ -403,7 +408,11 @@ public class PlayerMovement : MonoBehaviour
         {
             playerInput = Mathf.Min(0, playerInput);
         }
-        return playerInput;
+        else if (inputBan == InputBan.All)
+        {
+            playerInput = 0;
+        }
+            return playerInput;
     }
 
     private float FindAccelerationRate()

@@ -16433,8 +16433,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b451c04f12ee4d46a9cb9b4a33809ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovement
-  hitTerrainRaycastSize: {x: 0.8, y: 1.5}
-  grappleHead: {fileID: 797302754}
+  hitTerrainRaycastSize: {x: 0, y: 0}
+  grappleHead: {fileID: 0}
   grappleState: 0
   grapplerDirectionalInput: {x: 0, y: 0}
   mousePos: {x: 0, y: 0, z: 0}
@@ -16456,10 +16456,10 @@ MonoBehaviour:
   mouseMode: 0
   maxGrapples: 1
   currGrapples: 0
-  maxDistance: 15
-  leniency: 1
-  maxThrowTime: 0.25
-  pullSpeed: 20
+  maxDistance: 20
+  leniency: 5
+  maxThrowTime: 0.5
+  pullSpeed: 5
   grappleEntrySpeedThreshold: 0.05
   grappleVelocityMultiplier: 1.1
 --- !u!114 &1101314327
@@ -17395,7 +17395,7 @@ MonoBehaviour:
   climbTime: 0.2
   wallJumpVelocity: {x: 13, y: 10}
   wallJumpInputBanTime: 0.15
-  oppositeInputTime: 0.3
+  oppositeInputTime: 0.2
   timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
