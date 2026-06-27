@@ -224,7 +224,7 @@ public class GrapplerMovement : MonoBehaviour
     {
         if (pmScript.PlayerState != PlayerStates.ClassMovement)
         {
-            if ((grappleState == GrappleStates.GrappleSwing || grappleState != GrappleStates.GrapplePull) && !allowDirInputOnGrappleSwing)
+            if ((grappleState == GrappleStates.GrappleSwing || grappleState == GrappleStates.GrapplePull) && !allowDirInputOnGrappleSwing)
             {
                 pmScript.SetInputBan(InputBan.None);
             }
