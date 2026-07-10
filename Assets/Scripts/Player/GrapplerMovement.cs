@@ -592,8 +592,10 @@ public class GrapplerMovement : MonoBehaviour
 
     #region Input
 
-    public void OnGrappleInput(InputAction.CallbackContext context)
+    public void OnAbilityInput(InputAction.CallbackContext context)
     {
+        if (pmScript.movementClass != MovementClass.Grappler) return;
+
         bool keyPressed = context.ReadValue<float>() == 1;
         if (keyPressed && (pmScript.PlayerState == PlayerStates.InAir || pmScript.PlayerState == PlayerStates.OnWall) && canGrapple)
         {
@@ -620,8 +622,10 @@ public class GrapplerMovement : MonoBehaviour
         }
     }
 
-    public void OnGrapplePullInput(InputAction.CallbackContext context)
+    public void OnAltAbilitylInput(InputAction.CallbackContext context)
     {
+        if (pmScript.movementClass != MovementClass.Grappler) return;
+
         bool keyPressed = context.ReadValue<float>() == 1;
         grapplePullKeyDown = keyPressed;
 
@@ -658,6 +662,8 @@ public class GrapplerMovement : MonoBehaviour
 
     public void OnJumpGrappler(InputAction.CallbackContext context)
     {
+        if (pmScript.movementClass != MovementClass.Grappler) return;
+
         bool keyPressed = context.ReadValue<float>() == 1;
         if (keyPressed && grappleState == GrappleStates.GrappleSwing)
         {

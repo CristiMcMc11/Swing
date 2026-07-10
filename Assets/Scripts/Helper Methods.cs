@@ -33,7 +33,7 @@ public static class HelperMethods
     }
 
     /// <summary>
-    /// Sends a boxCast at the desired position, size, angle, and direction.
+    /// Sends a boxCast at the desired position, size, angle, and direction
     /// </summary>
     /// <param name="rb"></param>
     /// <param name="origin"></param>
@@ -42,13 +42,24 @@ public static class HelperMethods
     /// <param name="direction"></param>
     /// <param name="distance"></param>
     /// <param name="layerMask"></param>
-    /// <returns> The RaycastHit2D hit.</returns>
+    /// <returns>The RaycastHit2D hit</returns>
     public static RaycastHit2D BoxCast(this Rigidbody2D rb, Vector2 offset, Vector2 size, float angle, Vector2 direction, float distance, int layerMask)
     {
         RaycastHit2D hit = Physics2D.BoxCast(rb.position + offset, size, angle, direction, distance, layerMask);
         return hit;
     }
 
+    /// <summary>
+    /// Sends a boxCast at the desired position, size, angle, and direction.
+    /// </summary>
+    /// <param name="rb"></param>
+    /// <param name="offset"></param>
+    /// <param name="size"></param>
+    /// <param name="angle"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <param name="layerMask"></param>
+    /// <returns>Every RaycastHit2D hit in the boxCast</returns>
     public static RaycastHit2D[] BoxCastAll(this Rigidbody2D rb, Vector2 offset, Vector2 size, float angle, Vector2 direction, float distance, int layerMask)
     {
         RaycastHit2D[] hits = Physics2D.BoxCastAll(rb.position + offset, size, angle, direction, distance, layerMask);

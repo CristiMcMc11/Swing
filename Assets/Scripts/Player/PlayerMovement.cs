@@ -1,10 +1,7 @@
 using System;
 using System.Collections;
-
-//using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -34,9 +31,17 @@ public class PlayerMovement : MonoBehaviour
         All
     }
 
+    public enum MovementClass
+    {
+        Grappler,
+        Roller
+    }
+
     //References
     private Rigidbody2D rb;
+
     private GrapplerMovement gmScript;
+    private RollerMovement rmScript;
 
     private GameObject visualsGO;
     private PlayerVisuals visualsScript;
@@ -58,6 +63,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     public PlayerDirection playerDirection = PlayerDirection.Right; //SET GET; PRIVATE SET
+    public MovementClass movementClass = MovementClass.Grappler;
 
     [SerializeField] public Vector2 velocity;
     [SerializeField] private Vector2 additionalVelocity;
@@ -78,7 +84,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float groundSnapCorrection = 0.1f;
 
     [Header("Inputs")]
-    [SerializeField] private Vector2 directionalInput = Vector2.zero;
+    public bool checkPlayerState = true;
+    [SerializeField] public Vector2 directionalInput = Vector2.zero;
     [SerializeField] private InputBan inputBan = InputBan.None;
     [SerializeField] private bool jumpKeyDown = false;
 
@@ -142,6 +149,7 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         gmScript = GetComponent<GrapplerMovement>();
+        rmScript = GetComponent<RollerMovement>();
         animator = GetComponent<Animator>();
 
         visualsGO = transform.Find("Visuals").gameObject;
@@ -153,23 +161,23 @@ public class PlayerMovement : MonoBehaviour
     {
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
 
-        Gizmos.color = UnityEngine.Color.yellow;
-        Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
-        Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
-        Gizmos.DrawWireCube(position, size);
+        //Gizmos.color = UnityEngine.Color.yellow;
+        //Vector2 position = rb.position + new Vector2(0, -groundBoxCastYOffset);
+        //Vector2 size = new Vector2(groundBoxCastLength, 0.1f);
+        //Gizmos.DrawWireCube(position, size);
 
-        Vector2 offset = new Vector2(0, groundBoxCastYOffset);
-        Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+        //Vector2 offset = new Vector2(0, groundBoxCastYOffset);
+        //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
 
-        Gizmos.color = UnityEngine.Color.deepPink;
-        size = new Vector2(0.1f, wallBoxCastSize);
-        Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
-        Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
-        Gizmos.DrawWireCube(rb.position + leftOffset, size);
-        Gizmos.DrawWireCube(rb.position + rightOffset, size);
+        //Gizmos.color = UnityEngine.Color.deepPink;
+        //size = new Vector2(0.1f, wallBoxCastSize);
+        //Vector2 leftOffset = new Vector2(-wallBoxCastOffset, 0);
+        //Vector2 rightOffset = new Vector2(wallBoxCastOffset, 0);
+        //Gizmos.DrawWireCube(rb.position + leftOffset, size);
+        //Gizmos.DrawWireCube(rb.position + rightOffset, size);
 
-        offset = new Vector2(0, groundBoxCastYOffset);
-        Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
+        //offset = new Vector2(0, groundBoxCastYOffset);
+        //Gizmos.DrawWireCube(rb.position + offset, new Vector2(groundBoxCastLength, 0.1f));
 
         //Gizmos.color = UnityEngine.Color.yellow;
         //Gizmos.DrawWireCube(transform.position + new Vector3(0, 0.1f, 0), new Vector2(groundBoxCastLength + 0.2f, wallBoxCastSize - groundSnapVertical));
@@ -178,8 +186,6 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        print(inputBan);
-
         //CheckForWallTouch();
         //CheckForGrounded();
         CheckForHeadhit();
@@ -191,7 +197,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void LateUpdate()
     {
-        FindPlayerState(true);
+        if (checkPlayerState) FindPlayerState(true);
         Time.timeScale = gameSpeed;
     }
 
@@ -291,7 +297,16 @@ public class PlayerMovement : MonoBehaviour
                 break;
 
             case PlayerStates.ClassMovement:
-                gmScript.SetPlayerMovement(); //TEMP, later make it whatever class is currently equipped
+                switch (movementClass)
+                {
+                    case MovementClass.Grappler:
+                        gmScript.SetPlayerMovement();
+                        break;
+
+                    case MovementClass.Roller:
+                        rmScript.SetPlayerMovement();
+                        break;
+                }
                 break;
         }
     }
@@ -364,10 +379,10 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    public void AirMovement()
+    public void AirMovement(bool banInput = false, float customAccelerationRate = -1)
     {
-        float playerInput = FindPlayerInput();
-        float accelerationRate = FindAccelerationRate();
+        float playerInput = banInput ? 0 : FindPlayerInput();
+        float accelerationRate = customAccelerationRate == -1 ? FindAccelerationRate() : customAccelerationRate;
         ApplyGravity();
 
         if (Mathf.Abs(velocity.x) > walkSpeed)
@@ -692,7 +707,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void ApplyGravity()
     {
-        velocity.y += gravity * Time.deltaTime;
+        velocity.y += gravity * Time.fixedDeltaTime;
         velocity.y = Mathf.Max(velocity.y, terminalVelocity);
     }
 
