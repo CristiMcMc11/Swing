@@ -938,6 +938,144 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &55524565
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 55524566}
+  - component: {fileID: 55524568}
+  - component: {fileID: 55524567}
+  m_Layer: 6
+  m_Name: Ground (47)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &55524566
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 55524565}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 51.3137, y: 11.3683, z: 0}
+  m_LocalScale: {x: 1.2566574, y: 17.875362, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 946273355}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!61 &55524567
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 55524565}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
+--- !u!212 &55524568
+SpriteRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 55524565}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
 --- !u!1 &62354081
 GameObject:
   m_ObjectHideFlags: 0
@@ -7693,7 +7831,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 11.836149, y: -2.7339501, z: -10}
+  m_LocalPosition: {x: 69.74615, y: 7.5460496, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13320,6 +13458,7 @@ Transform:
   - {fileID: 1367151870}
   - {fileID: 1059314583}
   - {fileID: 423843129}
+  - {fileID: 55524566}
   - {fileID: 1881123972}
   - {fileID: 453759697}
   - {fileID: 2099860103}
@@ -15199,6 +15338,7 @@ GameObject:
   - component: {fileID: 1077071303}
   - component: {fileID: 1077071302}
   - component: {fileID: 1077071301}
+  - component: {fileID: 1077071304}
   m_Layer: 0
   m_Name: Visuals
   m_TagString: Untagged
@@ -15314,6 +15454,33 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!50 &1077071304
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1077071299}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
 --- !u!1 &1083962541
 GameObject:
   m_ObjectHideFlags: 0
@@ -16366,11 +16533,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovementJoint
   hitTerrainRaycastSize: {x: 0, y: 0}
   grappleHead: {fileID: 797302754}
-  directionalInput: {x: 0, y: 0}
+  grappleState: 0
+  grapplerDirectionalInput: {x: 0, y: 0}
   mousePos: {x: 0, y: 0, z: 0}
   grapplePointDistance: 0
   grapplePoint: {x: 0, y: 0}
   grapplePullPosition: {x: 0, y: 0}
+  wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0
   originalAngleSpeed: 0
@@ -16380,6 +16549,8 @@ MonoBehaviour:
   inStillHang: 0
   groundedGrapple: 0
   grapplePullOnStartGrappling: 0
+  grappleKeyDown: 0
+  grapplePullKeyDown: 0
   mouseMode: 0
   maxGrapples: 1
   currGrapples: 0
@@ -16389,6 +16560,7 @@ MonoBehaviour:
   pullSpeed: 20
   grappleEntrySpeedThreshold: 0.05
   grappleVelocityMultiplier: 1.1
+  allowDirInputOnGrappleSwing: 1
 --- !u!114 &1101314326
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16401,11 +16573,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b451c04f12ee4d46a9cb9b4a33809ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovement
-  hitTerrainRaycastSize: {x: 0.8, y: 1.5}
-  grappleHead: {fileID: 797302754}
-  directionalInput: {x: 0, y: 0}
+  hitTerrainRaycastSize: {x: 0, y: 0}
+  grappleHead: {fileID: 0}
+  grappleState: 0
+  grapplerDirectionalInput: {x: 0, y: 0}
+  mousePos: {x: 0, y: 0, z: 0}
   grapplePointDistance: 0
   grapplePoint: {x: 0, y: 0}
+  grapplePullPosition: {x: 0, y: 0}
+  wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0
   originalAngleSpeed: 0
@@ -16413,12 +16589,20 @@ MonoBehaviour:
   movingRight: 1
   canHitWall: 1
   inStillHang: 0
+  groundedGrapple: 0
   grapplePullOnStartGrappling: 0
-  maxDistance: 15
-  leniency: 1
-  maxThrowTime: 0.25
-  pullSpeed: 20
+  grappleKeyDown: 0
+  grapplePullKeyDown: 0
+  mouseMode: 0
+  maxGrapples: 1
+  currGrapples: 0
+  maxDistance: 20
+  leniency: 5
+  maxThrowTime: 0.5
+  pullSpeed: 5
   grappleEntrySpeedThreshold: 0.05
+  grappleVelocityMultiplier: 1.1
+  allowDirInputOnGrappleSwing: 1
 --- !u!114 &1101314327
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16431,8 +16615,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a52f61cc124a9ef4b90bf8f18b385e9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  playerState: 1
+  _playerState: 0
   playerDirection: 1
+  movementClass: 0
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
   playerCannotMove: 0
@@ -16447,11 +16632,10 @@ MonoBehaviour:
   groundSnapHorizontal: 0.3
   groundSnapVertical: 0.1
   groundSnapCorrection: 0.1
+  checkPlayerState: 1
   directionalInput: {x: 0, y: 0}
   inputBan: 0
   jumpKeyDown: 0
-  grappleKeyDown: 0
-  grapplePullKeyDown: 0
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
@@ -16478,6 +16662,8 @@ MonoBehaviour:
   climbTime: 0.2
   wallJumpVelocity: {x: 12.5, y: 10}
   wallJumpInputBanTime: 0.2
+  oppositeInputTime: 0.3
+  timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
   PGVxDecayFactor: 0.1
@@ -17207,11 +17393,12 @@ GameObject:
   - component: {fileID: 1152884641}
   - component: {fileID: 1152884640}
   - component: {fileID: 1152884642}
-  - component: {fileID: 1152884646}
   - component: {fileID: 1152884650}
+  - component: {fileID: 1152884651}
   - component: {fileID: 1152884645}
   - component: {fileID: 1152884643}
   - component: {fileID: 1152884647}
+  - component: {fileID: 1152884652}
   - component: {fileID: 1152884648}
   - component: {fileID: 1152884649}
   m_Layer: 0
@@ -17270,7 +17457,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -6390529120596566494, guid: 0fde806b1ab017c41872f4b1c70d50a5, type: 3}
+  m_Sprite: {fileID: 6760433446933882295, guid: 0fde806b1ab017c41872f4b1c70d50a5, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -17289,7 +17476,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.75, y: -0.38, z: 0}
+  m_LocalPosition: {x: 49.16, y: 9.9, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -17308,8 +17495,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a52f61cc124a9ef4b90bf8f18b385e9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  playerState: 1
+  _playerState: 0
   playerDirection: 1
+  movementClass: 1
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
   playerCannotMove: 0
@@ -17324,11 +17512,10 @@ MonoBehaviour:
   groundSnapHorizontal: 0.3
   groundSnapVertical: 0.05
   groundSnapCorrection: 0.15
+  checkPlayerState: 1
   directionalInput: {x: 0, y: 0}
   inputBan: 0
   jumpKeyDown: 0
-  grappleKeyDown: 0
-  grapplePullKeyDown: 0
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
@@ -17355,6 +17542,8 @@ MonoBehaviour:
   climbTime: 0.2
   wallJumpVelocity: {x: 13, y: 10}
   wallJumpInputBanTime: 0.15
+  oppositeInputTime: 0.2
+  timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
   PGVxDecayFactor: 0.1
@@ -17442,13 +17631,49 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1152884650}
+        m_TargetAssemblyTypeName: GrapplerMovement, Assembly-CSharp
+        m_MethodName: OnJumpGrappler
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1152884651}
+        m_TargetAssemblyTypeName: RollerMovement, Assembly-CSharp
+        m_MethodName: OnJumpInput
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: bfdb9c98-9d5c-4ea8-b072-02621a9a4015
     m_ActionName: 'Movement/Jump[/Keyboard/space,/Keyboard/upArrow]'
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1152884642}
-        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
-        m_MethodName: OnGrappleInput
+      - m_Target: {fileID: 1152884650}
+        m_TargetAssemblyTypeName: GrapplerMovement, Assembly-CSharp
+        m_MethodName: OnAbilityInput
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1152884651}
+        m_TargetAssemblyTypeName: RollerMovement, Assembly-CSharp
+        m_MethodName: OnAbilityInput
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -17490,9 +17715,9 @@ MonoBehaviour:
     m_ActionName: 'Movement/Grapple Directional Input[/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow]'
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1152884642}
-        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
-        m_MethodName: OnGrapplePullInput
+      - m_Target: {fileID: 1152884650}
+        m_TargetAssemblyTypeName: GrapplerMovement, Assembly-CSharp
+        m_MethodName: OnAltAbilitylInput
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -17513,36 +17738,6 @@ MonoBehaviour:
   m_DefaultActionMap: Movement
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!114 &1152884646
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1152884637}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b451c04f12ee4d46a9cb9b4a33809ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovement
-  hitTerrainRaycastSize: {x: 0.8, y: 1.5}
-  grappleHead: {fileID: 797302754}
-  directionalInput: {x: 0, y: 0}
-  grapplePointDistance: 0
-  grapplePoint: {x: 0, y: 0}
-  directionFromPrevPoint: {x: 0, y: 0}
-  grappleSpeed: 0
-  originalAngleSpeed: 0
-  speedEquationFactor: 0
-  movingRight: 1
-  canHitWall: 1
-  inStillHang: 0
-  grapplePullOnStartGrappling: 0
-  maxDistance: 15
-  leniency: 1
-  maxThrowTime: 0.25
-  pullSpeed: 20
-  grappleEntrySpeedThreshold: 0.05
 --- !u!61 &1152884647
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -17638,18 +17833,20 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1152884637}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe4e595812d5e5544934cf325fdbcee9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GrapplerMovementJoint
   hitTerrainRaycastSize: {x: 0, y: 0}
   grappleHead: {fileID: 797302754}
-  directionalInput: {x: 0, y: 0}
+  grappleState: 0
+  grapplerDirectionalInput: {x: 0, y: 0}
   mousePos: {x: 0, y: 0, z: 0}
   grapplePointDistance: 0
   grapplePoint: {x: 0, y: 0}
   grapplePullPosition: {x: 0, y: 0}
+  wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0
   originalAngleSpeed: 0
@@ -17659,6 +17856,8 @@ MonoBehaviour:
   inStillHang: 0
   groundedGrapple: 0
   grapplePullOnStartGrappling: 0
+  grappleKeyDown: 0
+  grapplePullKeyDown: 0
   mouseMode: 1
   maxGrapples: 1
   currGrapples: 0
@@ -17668,6 +17867,69 @@ MonoBehaviour:
   pullSpeed: 20
   grappleEntrySpeedThreshold: 0.05
   grappleVelocityMultiplier: 1.1
+  allowDirInputOnGrappleSwing: 1
+--- !u!114 &1152884651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1152884637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5548dd340b4dc744a9a9c245bdefbee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RollerMovement
+  velocity: {x: 0, y: 0}
+  rollerState: 0
+  side: 0
+  prevSide: 0
+  direction: 3
+  currentSpeed: 0
+  canBounce: 1
+  jumpForce: 10
+  terminalVelocity: -20
+  minSpeed: 10
+  rollerWindup: 0.1
+  rollerAirAccelTime: 1.5
+  bounceCooldown: 0.2
+  circleRadius: 0
+--- !u!58 &1152884652
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1152884637}
+  m_Enabled: 0
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.94666666
 --- !u!1 &1161778065
 GameObject:
   m_ObjectHideFlags: 0
@@ -20799,8 +21061,8 @@ Transform:
   m_GameObject: {fileID: 1334940589}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 23.79, y: 5.92, z: 0}
-  m_LocalScale: {x: 1.6545776, y: 1.526376, z: 1}
+  m_LocalPosition: {x: 25.21, y: 8.3168, z: 0}
+  m_LocalScale: {x: 1.6545776, y: 14.686023, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 946273355}
@@ -23014,7 +23276,7 @@ Transform:
   m_GameObject: {fileID: 1533811930}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 11.836149, y: -2.7339501, z: -10}
+  m_LocalPosition: {x: 69.74615, y: 7.5460496, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -23567,7 +23829,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1616987668
 MonoBehaviour:
   m_ObjectHideFlags: 0
