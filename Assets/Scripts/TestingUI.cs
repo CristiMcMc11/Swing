@@ -11,8 +11,6 @@ public class TestingUI : MonoBehaviour
 {
     public enum Variable
     {
-        JumpTime,
-        JumpHeight,
         TermVelocity,
         AccelTime,
         AirRes,
@@ -51,7 +49,7 @@ public class TestingUI : MonoBehaviour
 
     private void SetDefaultsList()
     {
-        defaults = new List<object> { pm.maxJumpTime, pm.maxJumpHeight, pm.terminalVelocity, pm.accelerationTime, pm.airResistance, pm.groundFriction,
+        defaults = new List<object> { pm.terminalVelocity, pm.accelerationTime, pm.airResistance, pm.groundFriction,
             pm.instantAccelerate, pm.minSlideSpeed, pm.maxSlideSpeed, pm.slideSpeedTweenTime, pm.wallJumpVelocity.x, pm.wallJumpVelocity.y, gm.mouseMode, pm.gameSpeed,
             pm.walkSpeed, gm.grappleVelocityMultiplier, gm.pullSpeed};
     }
@@ -113,20 +111,6 @@ public class TestingUI : MonoBehaviour
     {
         switch (varToChange)
         {
-            case Variable.JumpTime:
-                if (int.TryParse(val, out _))
-                {
-                    pm.maxJumpTime = float.Parse(val);
-                }
-                break;
-
-            case Variable.JumpHeight:
-                if (int.TryParse(val, out _))
-                {
-                    pm.maxJumpHeight = float.Parse(val);
-                }   
-                break;
-
             case Variable.TermVelocity:
                 if (int.TryParse(val, out _))
                 {
@@ -216,15 +200,7 @@ public class TestingUI : MonoBehaviour
     public void SetDefault()
     {
         switch (varToChange)
-        {
-            case Variable.JumpTime:
-                pm.maxJumpTime = (float)defaults[0];
-                break;
-
-            case Variable.JumpHeight:
-                pm.maxJumpHeight = (float)defaults[1];
-                break;
-
+        { 
             case Variable.TermVelocity:
                 pm.terminalVelocity = (float)defaults[2];
                 break;

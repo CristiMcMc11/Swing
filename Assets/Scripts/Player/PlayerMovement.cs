@@ -95,12 +95,14 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 newPos = Vector2.zero;
 
     [Header("Jumping/Air")]
-    public float maxJumpHeight = 5f;
-    public float maxJumpTime = 1f; 
+    public float jumpForce = 17;
+    public float gravity = -40;
     public float terminalVelocity = -20;
     [SerializeField] private float banWallAfterJumpTimeSec = 0.2f;
-    public float jumpForce => (2f * maxJumpHeight) / (maxJumpTime / 2f);
-    public float gravity => (-2f * maxJumpHeight) / Mathf.Pow(maxJumpTime / 2f, 2f);
+
+    [SerializeField] private float airTime = 0;
+    [SerializeField] private bool shortHop = false;
+    [SerializeField] private float shortHopTime = 0.6f;
 
     [Header("Acceleration")]
     public float accelerationTime = 0.5f; //time to get to walkSpeed
@@ -205,7 +207,7 @@ public class PlayerMovement : MonoBehaviour
     {
         return velocity;
     }
-    
+
     public float GetGravity()
     {
         return gravity;
@@ -266,10 +268,10 @@ public class PlayerMovement : MonoBehaviour
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
-            //case PlayerStates.WallClimbing:
-            //    velocity.y = climbHeight / climbTime;
-            //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
-            //    break;
+                //case PlayerStates.WallClimbing:
+                //    velocity.y = climbHeight / climbTime;
+                //    rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+                //    break;
         }
     }
 
@@ -429,7 +431,7 @@ public class PlayerMovement : MonoBehaviour
         {
             playerInput = 0;
         }
-            return playerInput;
+        return playerInput;
     }
 
     private float FindAccelerationRate()
@@ -465,7 +467,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else if (!canGround && !wallHit && PlayerState == PlayerStates.Grounded) //not hitting anything but state is still grounded
         {
-            PlayerState = PlayerStates.InAir;
+            GoInAir();
         }
         else if (canGround && PlayerState == PlayerStates.InAir && velocity.y < 0) //grounded hit while falling
         {
@@ -505,7 +507,7 @@ public class PlayerMovement : MonoBehaviour
             }
         }
         else if (Mathf.Round(groundHit.point.x * 100) == Mathf.Round(rb.position.x * 100) && (PlayerState == PlayerStates.OnWall || (PlayerState == PlayerStates.InAir && velocity.y < 0)))
-            //if groundhit.point.x is basically equal to rb.pos.x AND (playerState is onWall OR (player state is inAir AND moving downwards))
+        //if groundhit.point.x is basically equal to rb.pos.x AND (playerState is onWall OR (player state is inAir AND moving downwards))
         {
             BecomeGrounded(groundHit);
         }
@@ -530,7 +532,14 @@ public class PlayerMovement : MonoBehaviour
         ResetAirAbilities();
         velocity.y = 0;
         PlayerState = PlayerStates.Grounded;
+        //airTime = 0;
         //transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 0);
+    }
+
+    private void GoInAir()
+    {
+        PlayerState = PlayerStates.InAir;
+        StartCoroutine(AirTimeCounter());
     }
 
     private bool CheckSnapToGround()
@@ -683,13 +692,13 @@ public class PlayerMovement : MonoBehaviour
 
         if (keyPressed && PlayerState == PlayerStates.Grounded) //holding/pressed jump
         {
-            PlayerState = PlayerStates.InAir;
+            GoInAir();
             velocity.y += value * jumpForce;
             //StartCoroutine(SetCannotGoOnWallTimer(banWallAfterJumpTimeSec));
         }
         else if (!keyPressed && PlayerState == PlayerStates.InAir) //let go of jump
         {
-            velocity.y = velocity.y < 0 ? velocity.y : velocity.y / 4; //unchanged if velocity.y is negative, and divided by 4 if velocity.y is positive
+            if (velocity.y > 0) StartCoroutine(ShortHop()); //unchanged if velocity.y is negative, and divided by 4 if velocity.y is positive
         }
         else if (keyPressed && PlayerState == PlayerStates.OnWall)
         {
@@ -709,6 +718,25 @@ public class PlayerMovement : MonoBehaviour
     {
         velocity.y += gravity * Time.fixedDeltaTime;
         velocity.y = Mathf.Max(velocity.y, terminalVelocity);
+    }
+
+    private IEnumerator AirTimeCounter()
+    {
+        while (PlayerState == PlayerStates.InAir)
+        {
+            airTime += Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        airTime = 0;
+    }
+
+    private IEnumerator ShortHop()
+    {
+        while (velocity.y > 0)
+        {
+            ApplyGravity(); //second gravity application
+            yield return new WaitForFixedUpdate();
+        }
     }
 
     #endregion
@@ -744,7 +772,7 @@ public class PlayerMovement : MonoBehaviour
             StartCoroutine(SetBanMoveTimer(!onRightWall, wallJumpInputBanTime));
         }
         StartCoroutine(SetCannotGoOnWallTimer(0.05f));
-        PlayerState = PlayerStates.InAir;
+        GoInAir();
     }
 
     /// <summary>

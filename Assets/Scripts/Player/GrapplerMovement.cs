@@ -371,6 +371,7 @@ public class GrapplerMovement : MonoBehaviour
     private void StartGrappleSwinging()
     {
         rb.gravityScale = pmScript.GetGravity() / Physics2D.gravity.y;
+        pmScript.SetInputBan(InputBan.All);
 
         djoint.connectedAnchor = grapplePoint;
         djoint.enabled = true;

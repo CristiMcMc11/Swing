@@ -7831,7 +7831,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 69.74615, y: 7.5460496, z: -10}
+  m_LocalPosition: {x: 32.27615, y: 5.9160504, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16639,10 +16639,12 @@ MonoBehaviour:
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
-  maxJumpHeight: 4
-  maxJumpTime: 1
+  gravity: -40
   terminalVelocity: -20
   banWallAfterJumpTimeSec: 0.2
+  airTime: 0
+  shortHop: 0
+  shortHopTime: 0.6
   accelerationTime: 0.1
   airResistance: 1
   neutralAirResistance: 0.1
@@ -17476,7 +17478,7 @@ Transform:
   m_GameObject: {fileID: 1152884637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 49.16, y: 9.9, z: 0}
+  m_LocalPosition: {x: 11.69, y: 8.27, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -17497,7 +17499,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   _playerState: 0
   playerDirection: 1
-  movementClass: 1
+  movementClass: 0
   velocity: {x: 0, y: 0}
   additionalVelocity: {x: 0, y: 0}
   playerCannotMove: 0
@@ -17519,10 +17521,12 @@ MonoBehaviour:
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
-  maxJumpHeight: 4
-  maxJumpTime: 1
+  gravity: -40
   terminalVelocity: -25
   banWallAfterJumpTimeSec: 0.2
+  airTime: 0
+  shortHop: 0
+  shortHopTime: 0.6
   accelerationTime: 0.1
   airResistance: 0.1
   neutralAirResistance: 0.6
@@ -17833,7 +17837,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1152884637}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe4e595812d5e5544934cf325fdbcee9, type: 3}
   m_Name: 
@@ -17875,7 +17879,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1152884637}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b5548dd340b4dc744a9a9c245bdefbee, type: 3}
   m_Name: 
@@ -17887,6 +17891,7 @@ MonoBehaviour:
   direction: 3
   currentSpeed: 0
   canBounce: 1
+  holdingJump: 1
   jumpForce: 10
   terminalVelocity: -20
   minSpeed: 10
@@ -23276,7 +23281,7 @@ Transform:
   m_GameObject: {fileID: 1533811930}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 69.74615, y: 7.5460496, z: -10}
+  m_LocalPosition: {x: 32.27615, y: 5.9160504, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
