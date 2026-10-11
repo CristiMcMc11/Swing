@@ -16658,19 +16658,18 @@ MonoBehaviour:
   wallVelocity: 0
   canGoOnWall: 1
   isWallClimbing: 0
-  minSlideSpeed: 0.1
-  maxSlideSpeed: 4
   slideSpeedTweenTime: 0.2
   climbHeight: 3
   climbTime: 0.2
   wallJumpVelocity: {x: 12.5, y: 10}
   wallJumpInputBanTime: 0.2
+  slowSlideThreshold: 1
+  wallGravityPercentage: 0.1
+  wallEnterVelocityPercentage: 0.6
   oppositeInputTime: 0.3
   timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
-  wallCoyoteTimeActive: 1
-  wallCoyoteTime: 0.25
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
   gameSpeed: 0
@@ -17543,19 +17542,18 @@ MonoBehaviour:
   wallVelocity: 0
   canGoOnWall: 1
   isWallClimbing: 0
-  minSlideSpeed: 0.1
-  maxSlideSpeed: 4
   slideSpeedTweenTime: 0.2
   climbHeight: 3
   climbTime: 0.2
   wallJumpVelocity: {x: 13, y: 10}
   wallJumpInputBanTime: 0.15
+  slowSlideThreshold: 0.2
+  wallGravityPercentage: 0.1
+  wallEnterVelocityPercentage: 0.4
   oppositeInputTime: 0.02
   timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
-  wallCoyoteTimeActive: 0
-  wallCoyoteTime: 0.05
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
   gameSpeed: 1
