@@ -121,13 +121,15 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool canGoOnWall = true;
     [SerializeField] private bool isWallClimbing = true;
 
-    public float minSlideSpeed = 0.2f;
-    public float maxSlideSpeed = 1f;
     public float slideSpeedTweenTime = 0.4f;
     [SerializeField] private float climbHeight = 15;
     [SerializeField] private float climbTime = 0.1f;
     public Vector2 wallJumpVelocity = new Vector2(10, 10);
     [SerializeField] private float wallJumpInputBanTime = 0.2f;
+
+    public float slowSlideThreshold = 1f;
+    [SerializeField] private float wallGravityPercentage = 0.1f;
+    [SerializeField] private float wallEnterVelocityPercentage = 0.6f;
 
     [SerializeField] private float oppositeInputTime = 0.3f;
     [SerializeField] private bool timingOppositeInput = false;
@@ -263,8 +265,7 @@ public class PlayerMovement : MonoBehaviour
             //    break;
 
             case PlayerStates.OnWall:
-                velocity.x = 0;
-                velocity.y = wallVelocity;
+                ApplyGravity(velocity.y < slowSlideThreshold ? wallGravityPercentage * 2 : wallGravityPercentage); //you fall on the wall faster until a threshold
                 rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
                 break;
 
@@ -720,6 +721,12 @@ public class PlayerMovement : MonoBehaviour
         velocity.y = Mathf.Max(velocity.y, terminalVelocity);
     }
 
+    public void ApplyGravity(float percentageModifier)
+    {
+        velocity.y += gravity * Time.fixedDeltaTime * percentageModifier;
+        velocity.y = Mathf.Max(velocity.y, terminalVelocity);
+    }
+
     private IEnumerator AirTimeCounter()
     {
         while (PlayerState == PlayerStates.InAir)
@@ -760,13 +767,12 @@ public class PlayerMovement : MonoBehaviour
     public void EnterWall()
     {
         PlayerState = PlayerStates.OnWall;
-
-        TweenWallSlideSpeed();
+        velocity.x = 0;  
+        velocity.y *= wallEnterVelocityPercentage;
     }
 
     private void LeaveWall(bool wallJump)
     {
-        velocity.y = additionalVelocity.y;
         if (wallJump)
         {
             StartCoroutine(SetBanMoveTimer(!onRightWall, wallJumpInputBanTime));
@@ -809,8 +815,16 @@ public class PlayerMovement : MonoBehaviour
         //StartAcceleration(playerMoveInput.x);
         //additionalVelocity = wallJumpVelocity;
         //additionalVelocity.x = onRightWall ? -additionalVelocity.x : additionalVelocity.x;
-        Vector2 velocity = playerDirection == PlayerDirection.Right ? new Vector2(-wallJumpVelocity.x, wallJumpVelocity.y) : wallJumpVelocity;
-        AddForce(velocity, false);
+        Vector2 wallJumpVel = playerDirection == PlayerDirection.Right ? new Vector2(-wallJumpVelocity.x, wallJumpVelocity.y) : wallJumpVelocity;
+
+        if (velocity.y < 0)
+        {
+            velocity = wallJumpVel;
+        }
+        else
+        {
+            AddForce(wallJumpVel, false);
+        }  
     }
 
     private IEnumerator SetCannotGoOnWallTimer(float timeSeconds)
@@ -818,32 +832,6 @@ public class PlayerMovement : MonoBehaviour
         canGoOnWall = false;
         yield return new WaitForSeconds(timeSeconds);
         canGoOnWall = true;
-    }
-
-    private void TweenWallSlideSpeed()
-    {
-        if (LeanTween.isTweening())
-        {
-            LeanTween.cancel(gameObject);
-        }
-
-        float minSpeed = Mathf.Max(-velocity.y / 2.5f, minSlideSpeed);
-        print(minSpeed);
-        if (minSpeed > maxSlideSpeed)
-        {
-            wallVelocity = -minSpeed;
-        }
-        else
-        {
-            float time = slideSpeedTweenTime / (maxSlideSpeed - minSpeed);
-
-            LeanTween.value(-minSpeed, -maxSlideSpeed, time)
-                .setOnUpdate((float value) =>
-                {
-                    wallVelocity = value;
-                });
-        }
-            
     }
 
     #endregion

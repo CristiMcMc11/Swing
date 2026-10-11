@@ -16639,6 +16639,7 @@ MonoBehaviour:
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
+  jumpForce: 17
   gravity: -40
   terminalVelocity: -20
   banWallAfterJumpTimeSec: 0.2
@@ -16668,6 +16669,8 @@ MonoBehaviour:
   timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
+  wallCoyoteTimeActive: 1
+  wallCoyoteTime: 0.25
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
   gameSpeed: 0
@@ -17521,6 +17524,7 @@ MonoBehaviour:
   walkSpeed: 8
   facingRight: 1
   newPos: {x: 0, y: 0}
+  jumpForce: 17
   gravity: -40
   terminalVelocity: -25
   banWallAfterJumpTimeSec: 0.2
@@ -17546,10 +17550,12 @@ MonoBehaviour:
   climbTime: 0.2
   wallJumpVelocity: {x: 13, y: 10}
   wallJumpInputBanTime: 0.15
-  oppositeInputTime: 0.2
+  oppositeInputTime: 0.02
   timingOppositeInput: 0
   vaultTime: 0.25
   disableVault: 1
+  wallCoyoteTimeActive: 0
+  wallCoyoteTime: 0.05
   PGVxDecayFactor: 0.1
   PGVyDecayFactor: 7
   gameSpeed: 1
@@ -19838,8 +19844,8 @@ Transform:
   m_GameObject: {fileID: 1243073079}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.91, y: 6.01, z: 0}
-  m_LocalScale: {x: 1.1358575, y: 5.490496, z: 1}
+  m_LocalPosition: {x: 0.9388, y: 5.987, z: 0}
+  m_LocalScale: {x: 1.1934453, y: 5.5366163, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 946273355}

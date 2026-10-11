@@ -50,7 +50,7 @@ public class TestingUI : MonoBehaviour
     private void SetDefaultsList()
     {
         defaults = new List<object> { pm.terminalVelocity, pm.accelerationTime, pm.airResistance, pm.groundFriction,
-            pm.instantAccelerate, pm.minSlideSpeed, pm.maxSlideSpeed, pm.slideSpeedTweenTime, pm.wallJumpVelocity.x, pm.wallJumpVelocity.y, gm.mouseMode, pm.gameSpeed,
+            pm.instantAccelerate, pm.slowSlideThreshold, pm.slowSlideThreshold, pm.slideSpeedTweenTime, pm.wallJumpVelocity.x, pm.wallJumpVelocity.y, gm.mouseMode, pm.gameSpeed,
             pm.walkSpeed, gm.grappleVelocityMultiplier, gm.pullSpeed};
     }
 
@@ -135,14 +135,14 @@ public class TestingUI : MonoBehaviour
             case Variable.MinSlideSpeed:
                 if (int.TryParse(val, out _))
                 {
-                    pm.minSlideSpeed = float.Parse(val);
+                    pm.slowSlideThreshold = float.Parse(val);
                 }
                 break;
 
             case Variable.MaxSlideSpeed:
                 if (int.TryParse(val, out _))
                 {
-                    pm.maxSlideSpeed = float.Parse(val);
+                    pm.slowSlideThreshold = float.Parse(val);
                 }
                 break;
 
@@ -222,11 +222,11 @@ public class TestingUI : MonoBehaviour
                 break;
 
             case Variable.MinSlideSpeed:
-                pm.minSlideSpeed = (float)defaults[7];
+                pm.slowSlideThreshold = (float)defaults[7];
                 break;
 
             case Variable.MaxSlideSpeed:
-                pm.maxSlideSpeed = (float)defaults[8];
+                pm.slowSlideThreshold = (float)defaults[8];
                 break;
 
             case Variable.SlideTweenTime:
