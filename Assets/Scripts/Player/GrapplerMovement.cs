@@ -37,10 +37,11 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private float tautDistanceLeniency = 0.1f;
 
     [SerializeField] private float tautDistance;
-    public bool isTaut = false;
+    [SerializeField] bool isTaut = false;
+    [SerializeField] float currentRopeLength = 0;
+    [SerializeField] float nonTautAccelerationRate = 0.2f;
     public float heightToAnchor => rb.position.y - anchorPoint.y;
-
-    public float currentRopeLength = 0;
+    
 
 
     [Header("Other grappler stuff? idk")]
@@ -404,7 +405,7 @@ public class GrapplerMovement : MonoBehaviour
         //    djoint.enabled = true;
         //}
 
-        pmScript.AirMovement();
+        pmScript.AirMovement(false, nonTautAccelerationRate);
         Vector2 projectedPosition = rb.position + pmScript.velocity * Time.fixedDeltaTime;
 
         if (Vector2.Distance(projectedPosition, anchorPoint) >= tautDistance)
@@ -462,11 +463,10 @@ public class GrapplerMovement : MonoBehaviour
         pmScript.velocity = tangentDirection * speed;
     }
 
-    public Vector2 JumpOutOfGrapple()
+    public void JumpOutOfGrapple()
     {
         pmScript.PlayerState = PlayerStates.InAir;
         CancelGrappleSwing();
-        return rb.linearVelocity * grappleVelocityMultiplier;
     }
 
     public void CancelGrappleSwing()
@@ -488,33 +488,6 @@ public class GrapplerMovement : MonoBehaviour
     {
         float rotation = FindCurrentPlayerAngleRad(anchorPoint, tautDistance) * Mathf.Rad2Deg + 90;
         return rotation;
-    }
-
-    private float InitialVelocityToAngleSpeed(Vector2 playerVelocity, float radius, float playerAngleRad)
-    {
-        playerAngleRad = playerAngleRad % Mathf.PI; //Angle must be between 0 and pi for equations to work
-
-        float speed = 0;
-
-        speed += Mathf.Abs(playerVelocity.x * (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1));
-        speed += Mathf.Abs(playerVelocity.y * (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2)));
-
-        //print((FindCurrentPlayerAngleRad(grapplePoint, radius) * Mathf.Rad2Deg, (-(2 / Mathf.PI) * Mathf.Abs(playerAngleRad - Mathf.PI / 2) + 1), (2 / Mathf.PI * Mathf.Abs(playerAngleRad - Mathf.PI / 2)), speed / (1 + radius), radius, playerMovementScript.GetVelocity()));
-
-        float angleSpeedRad = speed / (1+radius);
-        angleSpeedRad = playerVelocity.x >= 0 ? angleSpeedRad : -angleSpeedRad;
-
-        if (Mathf.Abs(angleSpeedRad) < grappleEntrySpeedThreshold)
-        {
-            angleSpeedRad = 0;
-            inStillHang = true;
-        }
-        else
-        {
-            inStillHang = false;
-        }
-
-        return angleSpeedRad;
     }
 
     private float VelocityToAngleSpeed(Vector2 playerVelocity, float radius)
@@ -562,24 +535,6 @@ public class GrapplerMovement : MonoBehaviour
         }
 
         return angleRadians;
-    }
-
-    /// <summary>
-    /// Calculates the angle speed for one frame of grapple movement. This is done by adding gravity as an anglespeed to the grappleSpeed.
-    /// </summary>
-    /// <param name="speedEquationFactor"></param>
-    /// <param name="currentPlayerAngleRad"></param>
-    /// <param name="radius"></param>
-    /// <returns> A float, the angleSpeed.</returns>
-    private float CalculateAngleSpeed(float currentPlayerAngleRad)
-    {
-        bool isOnTheRight = currentPlayerAngleRad * Mathf.Rad2Deg >= 270 || currentPlayerAngleRad * Mathf.Rad2Deg <= 90;
-        float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -pmScript.gravity), tautDistance);
-
-        //If the player is on the right, add gravityAngleSpeed. If the player is on the left, subtract gravityAngleSpeed
-        grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
-
-        return grappleSpeed;
     }
 
     private float CalculateGrappleThrowTime(float distance, bool grappleHit)
@@ -733,7 +688,7 @@ public class GrapplerMovement : MonoBehaviour
         bool keyPressed = context.ReadValue<float>() == 1;
         if (keyPressed && grappleState == GrappleStates.GrappleSwing)
         {
-            pmScript.AddForce(JumpOutOfGrapple(), true);
+            JumpOutOfGrapple();
         }
     }
 
