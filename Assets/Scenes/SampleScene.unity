@@ -16536,9 +16536,13 @@ MonoBehaviour:
   grappleState: 0
   grapplerDirectionalInput: {x: 0, y: 0}
   mousePos: {x: 0, y: 0, z: 0}
-  grapplePointDistance: 0
-  grapplePoint: {x: 0, y: 0}
+  anchorPoint: {x: 0, y: 0}
   grapplePullPosition: {x: 0, y: 0}
+  tautStoredEnergy: 0
+  swingSpeedRetentionFactor: 1
+  tautDistanceLeniency: 0.1
+  tautDistance: 0
+  anchorPointDistance: 0
   wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0
@@ -16578,9 +16582,13 @@ MonoBehaviour:
   grappleState: 0
   grapplerDirectionalInput: {x: 0, y: 0}
   mousePos: {x: 0, y: 0, z: 0}
-  grapplePointDistance: 0
-  grapplePoint: {x: 0, y: 0}
+  anchorPoint: {x: 0, y: 0}
   grapplePullPosition: {x: 0, y: 0}
+  tautStoredEnergy: 0
+  swingSpeedRetentionFactor: 1
+  tautDistanceLeniency: 0.1
+  tautDistance: 0
+  anchorPointDistance: 0
   wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0
@@ -17851,9 +17859,13 @@ MonoBehaviour:
   grappleState: 0
   grapplerDirectionalInput: {x: 0, y: 0}
   mousePos: {x: 0, y: 0, z: 0}
-  grapplePointDistance: 0
-  grapplePoint: {x: 0, y: 0}
+  anchorPoint: {x: 0, y: 0}
   grapplePullPosition: {x: 0, y: 0}
+  tautStoredEnergy: -1
+  swingSpeedRetentionFactor: 0.5
+  tautDistanceLeniency: 0.1
+  tautDistance: 0
+  anchorPointDistance: 0
   wallHoldPos: {x: 0, y: 0}
   directionFromPrevPoint: {x: 0, y: 0}
   grappleSpeed: 0

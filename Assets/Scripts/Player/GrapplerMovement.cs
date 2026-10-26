@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using NUnit.Framework.Constraints;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
@@ -29,11 +30,21 @@ public class GrapplerMovement : MonoBehaviour
     [Header("Grappler Runtime")]
     [SerializeField] private Vector2 grapplerDirectionalInput;
     [SerializeField] private Vector3 mousePos;
-    [SerializeField] private float grapplePointDistance;
-    [SerializeField] private Vector2 grapplePoint;
+    [SerializeField] private Vector2 anchorPoint;
     [SerializeField] private Vector2 grapplePullPosition = Vector2.zero;
-    [SerializeField] private Vector2 wallHoldPos = Vector2.zero;
+    [SerializeField] private float tautStoredEnergy = -1;
+    [SerializeField] private float swingSpeedRetentionFactor = 1f;
+    [SerializeField] private float tautDistanceLeniency = 0.1f;
 
+    [SerializeField] private float tautDistance;
+    public bool isTaut => anchorPointDistance + tautDistanceLeniency >= tautDistance && grappleState == GrappleStates.GrappleSwing;
+    public float heightToAnchor => rb.position.y - anchorPoint.y;
+
+    public float anchorPointDistance = 0;
+
+
+    [Header("Other grappler stuff? idk")]
+    [SerializeField] private Vector2 wallHoldPos = Vector2.zero;
     [SerializeField] private Vector2 directionFromPrevPoint;
     [SerializeField] public float grappleSpeed; //MAKE GET; PRIVATE SET
     [SerializeField] private float originalAngleSpeed;
@@ -100,7 +111,7 @@ public class GrapplerMovement : MonoBehaviour
         }
         else if (grappleState == GrappleStates.GrappleThrow || grappleState == GrappleStates.GrappleSwing)
         {
-            grappleHead.transform.position = grapplePoint;
+            grappleHead.transform.position = anchorPoint;
         }
         else if (grappleState == GrappleStates.None)
         {
@@ -110,7 +121,6 @@ public class GrapplerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-
         if (grappleState == GrappleStates.GrappleSwing) GrappleSwingMovement();
         FindGrapplerRotation();
     }
@@ -122,7 +132,7 @@ public class GrapplerMovement : MonoBehaviour
         {
             lineRenderer.enabled = true;
             lineRenderer.SetPosition(0, transform.position);
-            lineRenderer.SetPosition(1, grapplePoint);
+            lineRenderer.SetPosition(1, anchorPoint);
         }
         else
         {
@@ -262,21 +272,21 @@ public class GrapplerMovement : MonoBehaviour
 
         if (mouseMode)
         {
-            grapplePoint = FindMouseGrapplePoint(ref grappleHit);
+            anchorPoint = FindMouseGrapplePoint(ref grappleHit);
         }
         else
         {
-            grapplePoint = FindGrapplePoint(ref grappleHit, grapplerDirectionalInput);
+            anchorPoint = FindGrapplePoint(ref grappleHit, grapplerDirectionalInput);
         }
             
-        float tempDistance = Vector2.Distance(rb.position, grapplePoint);
+        float tempDistance = Vector2.Distance(rb.position, anchorPoint);
         float time = CalculateGrappleThrowTime(tempDistance, grappleHit);
 
         //animation for throwing grapple
 
         grappleHead.SetActive(true);
         grappleHead.transform.position = transform.position;
-        grappleHead.LeanMove(grapplePoint, time)
+        grappleHead.LeanMove(anchorPoint, time)
             .setOnComplete(() =>
             {
                 if (!grappleHit)
@@ -291,7 +301,7 @@ public class GrapplerMovement : MonoBehaviour
 
         yield return new WaitForSeconds(grappleHit ? time : time*2);
 
-        grapplePointDistance = Vector2.Distance(rb.position, grapplePoint);
+        tautDistance = Vector2.Distance(rb.position, anchorPoint);
 
         if (grappleHit)
         {
@@ -371,11 +381,11 @@ public class GrapplerMovement : MonoBehaviour
     private void StartGrappleSwinging()
     {
         rb.gravityScale = pmScript.GetGravity() / Physics2D.gravity.y;
-        pmScript.SetInputBan(InputBan.All);
+        //pmScript.SetInputBan(InputBan.All);
 
-        djoint.connectedAnchor = grapplePoint;
-        djoint.enabled = true;
-        djoint.distance = grapplePointDistance;
+        //djoint.connectedAnchor = grapplePoint;
+        //djoint.enabled = true;
+        //djoint.distance = tautDistance;
 
         rb.AddForce(pmScript.GetVelocity(), ForceMode2D.Impulse);
         grappleState = GrappleStates.GrappleSwing;
@@ -383,18 +393,68 @@ public class GrapplerMovement : MonoBehaviour
 
     private void GrappleSwingMovement()
     {
-        if (Vector2.Distance(rb.position + rb.linearVelocity * Time.fixedDeltaTime, grapplePoint) < grapplePointDistance)
+        //if (Vector2.Distance(rb.position + rb.linearVelocity * Time.fixedDeltaTime, grapplePoint) < grapplePointDistance)
+        //{
+        //    djoint.enabled = false;
+        //    pmScript.AirMovement();
+        //    if (!allowDirInputOnGrappleSwing) pmScript.SetInputBan(InputBan.All);
+        //    rb.MovePosition(rb.position + pmScript.velocity * Time.fixedDeltaTime);
+        //    //rb.AddForce(pmScript.velocity);
+        //}
+        //else
+        //{
+        //    djoint.enabled = true;
+        //}
+
+        pmScript.AirMovement();
+
+        if (isTaut && tautStoredEnergy == -1)
         {
-            djoint.enabled = false;
-            pmScript.AirMovement();
-            if (!allowDirInputOnGrappleSwing) pmScript.SetInputBan(InputBan.All);
-            rb.MovePosition(rb.position + pmScript.velocity * Time.fixedDeltaTime);
-            //rb.AddForce(pmScript.velocity);
+            OnTaut();
         }
-        else
+        else if (!isTaut)
         {
-            djoint.enabled = true;
+            tautStoredEnergy = -1;
         }
+
+        if (isTaut) TautRopeMovement();
+        rb.MovePosition(rb.position + pmScript.velocity * Time.fixedDeltaTime);
+        anchorPointDistance = Vector2.Distance(rb.position, anchorPoint);
+    }
+
+    private void OnTaut()
+    {
+        print("taut frame");
+        tautStoredEnergy = 0.5f * Mathf.Pow(pmScript.velocity.magnitude, 2) + -pmScript.gravity * heightToAnchor;
+    }
+
+    private void TautRopeMovement()
+    {
+        Vector2 ropeDirection = (anchorPoint - rb.position).normalized;
+        rb.position = anchorPoint + -ropeDirection * tautDistance;
+
+        //1. Getting only tangent velocity
+        float radialSpeed = Vector2.Dot(pmScript.velocity, ropeDirection);
+        Vector2 radialVelocity = radialSpeed * ropeDirection;
+        pmScript.velocity -= radialVelocity;
+
+        //2 speed retention
+        float heightToAnchor = anchorPoint.y - rb.position.y;
+        float speed = Mathf.Sqrt(2 * (tautStoredEnergy - pmScript.gravity * heightToAnchor));
+        speed = float.IsNaN(speed) ? 0 : speed; //don't return NaN that would be bad
+        Vector2 tangentDirection = Vector2.Perpendicular(ropeDirection);
+        float tangentDot = Vector2.Dot(pmScript.velocity, tangentDirection);
+
+        if (tangentDot < 0)
+        {
+            tangentDirection = -tangentDirection;
+        }
+        else if (tangentDot < 0.0005f && tangentDot > -0.0005f) //if close to zero or smth???
+        {
+            if (tangentDirection.y > 0) tangentDirection = -tangentDirection;
+        }
+
+        pmScript.velocity = tangentDirection * speed;
     }
 
     public Vector2 JumpOutOfGrapple()
@@ -413,7 +473,7 @@ public class GrapplerMovement : MonoBehaviour
 
     public Vector2 SetPostGrappleVelocity()
     {
-        return AngleSpeedToVelocity(grappleSpeed, grapplePointDistance, pmScript.grapplerDirectionFromPrevPoint);
+        return AngleSpeedToVelocity(grappleSpeed, tautDistance, pmScript.grapplerDirectionFromPrevPoint);
     }
 
     #endregion
@@ -421,7 +481,7 @@ public class GrapplerMovement : MonoBehaviour
     #region Grappler Swing Calculations
     public float GrappleRotationDeg()
     {
-        float rotation = FindCurrentPlayerAngleRad(grapplePoint, grapplePointDistance) * Mathf.Rad2Deg + 90;
+        float rotation = FindCurrentPlayerAngleRad(anchorPoint, tautDistance) * Mathf.Rad2Deg + 90;
         return rotation;
     }
 
@@ -509,7 +569,7 @@ public class GrapplerMovement : MonoBehaviour
     private float CalculateAngleSpeed(float currentPlayerAngleRad)
     {
         bool isOnTheRight = currentPlayerAngleRad * Mathf.Rad2Deg >= 270 || currentPlayerAngleRad * Mathf.Rad2Deg <= 90;
-        float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -pmScript.gravity), grapplePointDistance);
+        float gravityAngleSpeed = VelocityToAngleSpeed(new Vector2(0, -pmScript.gravity), tautDistance);
 
         //If the player is on the right, add gravityAngleSpeed. If the player is on the left, subtract gravityAngleSpeed
         grappleSpeed = isOnTheRight ? grappleSpeed + gravityAngleSpeed * Time.fixedDeltaTime : grappleSpeed - gravityAngleSpeed * Time.fixedDeltaTime;
@@ -544,7 +604,7 @@ public class GrapplerMovement : MonoBehaviour
             groundedGrapple = false;
         }
 
-        Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
+        Vector2 directionToGrapplePoint = (anchorPoint - rb.position).normalized;
         return rb.position + directionToGrapplePoint * pullSpeed * Time.fixedDeltaTime;
     }
 
@@ -554,7 +614,7 @@ public class GrapplerMovement : MonoBehaviour
 
         if (!pmScript.CheckForGrounded() && !pmScript.CheckForHeadhit())
         {
-            Vector2 directionToGrapplePoint = (grapplePoint - rb.position).normalized;
+            Vector2 directionToGrapplePoint = (anchorPoint - rb.position).normalized;
             exitVelocity = directionToGrapplePoint * pullSpeed;
         }
 
@@ -568,7 +628,7 @@ public class GrapplerMovement : MonoBehaviour
 
     public bool CheckForValidWallHold(RaycastHit2D hit)
     {
-        if (Mathf.Sign(hit.point.x - transform.position.x) == Mathf.Sign(grapplePoint.x - transform.position.x))
+        if (Mathf.Sign(hit.point.x - transform.position.x) == Mathf.Sign(anchorPoint.x - transform.position.x))
         {
             return true;
         }
