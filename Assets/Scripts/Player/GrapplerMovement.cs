@@ -37,10 +37,10 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private float tautDistanceLeniency = 0.1f;
 
     [SerializeField] private float tautDistance;
-    public bool isTaut => anchorPointDistance + tautDistanceLeniency >= tautDistance && grappleState == GrappleStates.GrappleSwing;
+    public bool isTaut = false;
     public float heightToAnchor => rb.position.y - anchorPoint.y;
 
-    public float anchorPointDistance = 0;
+    public float currentRopeLength = 0;
 
 
     [Header("Other grappler stuff? idk")]
@@ -380,14 +380,12 @@ public class GrapplerMovement : MonoBehaviour
 
     private void StartGrappleSwinging()
     {
-        rb.gravityScale = pmScript.GetGravity() / Physics2D.gravity.y;
-        //pmScript.SetInputBan(InputBan.All);
+        Vector2 projectedPosition = rb.position + pmScript.velocity * Time.fixedDeltaTime;
+        if (Vector2.Distance(projectedPosition, anchorPoint) >= tautDistance)
+            isTaut = true;
+        else
+            isTaut = false;
 
-        //djoint.connectedAnchor = grapplePoint;
-        //djoint.enabled = true;
-        //djoint.distance = tautDistance;
-
-        rb.AddForce(pmScript.GetVelocity(), ForceMode2D.Impulse);
         grappleState = GrappleStates.GrappleSwing;
     }
 
@@ -407,6 +405,13 @@ public class GrapplerMovement : MonoBehaviour
         //}
 
         pmScript.AirMovement();
+        Vector2 projectedPosition = rb.position + pmScript.velocity * Time.fixedDeltaTime;
+
+        if (Vector2.Distance(projectedPosition, anchorPoint) >= tautDistance)
+            isTaut = true;
+        else
+            isTaut = false;
+
 
         if (isTaut && tautStoredEnergy == -1)
         {
@@ -419,7 +424,7 @@ public class GrapplerMovement : MonoBehaviour
 
         if (isTaut) TautRopeMovement();
         rb.MovePosition(rb.position + pmScript.velocity * Time.fixedDeltaTime);
-        anchorPointDistance = Vector2.Distance(rb.position, anchorPoint);
+        currentRopeLength = Vector2.Distance(rb.position, anchorPoint);
     }
 
     private void OnTaut()
