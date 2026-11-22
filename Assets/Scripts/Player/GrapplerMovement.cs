@@ -37,6 +37,7 @@ public class GrapplerMovement : MonoBehaviour
     [SerializeField] private float tautDistanceLeniency = 0.1f;
 
     [SerializeField] private float tautDistance;
+    [SerializeField] private float overTautDistance;
     [SerializeField] bool isTaut = false;
     [SerializeField] float currentRopeLength = 0;
     [SerializeField] float nonTautAccelerationRate = 0.2f;
@@ -383,7 +384,10 @@ public class GrapplerMovement : MonoBehaviour
     {
         Vector2 projectedPosition = rb.position + pmScript.velocity * Time.fixedDeltaTime;
         if (Vector2.Distance(projectedPosition, anchorPoint) >= tautDistance)
+        {
             isTaut = true;
+            OnTaut();
+        }
         else
             isTaut = false;
 
@@ -431,7 +435,17 @@ public class GrapplerMovement : MonoBehaviour
     private void OnTaut()
     {
         print("taut frame");
-        tautStoredEnergy = 0.5f * Mathf.Pow(pmScript.velocity.magnitude, 2) + -pmScript.gravity * heightToAnchor;
+
+        Vector2 ropeDirection = (anchorPoint - rb.position).normalized;
+        float radialSpeed = Vector2.Dot(pmScript.velocity, ropeDirection);
+        Vector2 radialVelocity = radialSpeed * ropeDirection;
+        Vector2 tangentVelocity = pmScript.velocity - radialVelocity;
+
+        tautStoredEnergy = 0.5f * Mathf.Pow(tangentVelocity.magnitude, 2) + -pmScript.gravity * heightToAnchor;
+
+        //float dot = Vector2.Dot(pmScript.velocity.normalized, ropeDirection);
+        //tautStoredEnergy *= dot;
+        //print(tautStoredEnergy);
     }
 
     private void TautRopeMovement()
